@@ -1,7 +1,7 @@
 from flask import Flask
 from application.database import db
 from application.config import LocalConfig
-from application.models import Customer, Item, Bill, Bill_x_Items, custom_customer_price
+from application.models import Customer, Item, Bill, BillxItems, CustomCustomerPrice
 
 
 def create_app():
@@ -13,6 +13,11 @@ def create_app():
     return app
 
 app = create_app()
+
+from application.routes import *
+
+with  app.app_context():
+    db.create_all() #It works only once or when  database is not present.
 
 if __name__ == "__main__":
     app.run()

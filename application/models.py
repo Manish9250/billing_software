@@ -39,7 +39,7 @@ class Bill(db.Model):
     def __repr__(self):
         return f'<Bill {self.id}>'
     
-class Bill_x_Items(db.Model):
+class BillxItems(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     bill_id = db.Column(db.Integer, db.ForeignKey('bill.id'), nullable=False)
     item_id = db.Column(db.Integer, db.ForeignKey('item.id'), nullable=False)
@@ -52,7 +52,7 @@ class Bill_x_Items(db.Model):
     def __repr__(self):
         return f'<Bill_x_Items {self.id}>'
     
-class custom_customer_price(db.Model):
+class CustomCustomerPrice(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     customer_id = db.Column(db.Integer, db.ForeignKey('customer.id'), nullable=False)
     item_id = db.Column(db.Integer, db.ForeignKey('item.id'), nullable=False)
