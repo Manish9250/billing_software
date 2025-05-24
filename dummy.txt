@@ -1,0 +1,9 @@
+
+parser.add_argument('name', type=str, required=False,location='json')
+parser.add_argument('size', type=str, required=False,location='json')
+parser.add_argument('buy_price', type=float, required=False,location='json') 
+parser.add_argument('quantity', type=float, required=False,location='json')
+parser.add_argument('wholesale_price', type=float, required=False,location='json')
+parser.add_argument('retail_price', type=float, required=False,location='json')
+parser.add_argument('alert_quantity', type=float, required=False,location='json')
+parser.add_argument('expiry_duration', type=int, required=False,location='json')

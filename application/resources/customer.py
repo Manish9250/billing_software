@@ -1,6 +1,6 @@
 from flask_restful import Resource, Api, reqparse
-from .models import Customer
-from .database import db
+from ..models import Customer
+from ..database import db
 
 api = Api()
 

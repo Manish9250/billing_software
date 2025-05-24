@@ -1,5 +1,10 @@
 from datetime import datetime, timezone
 from .database import db
+import pytz
+
+
+india = pytz.timezone('Asia/Kolkata')
+now = datetime.now(india)  # Localized time
 
 class Customer(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -18,12 +23,26 @@ class Item(db.Model):
     buy_price = db.Column(db.Float, nullable=False)
     quantity = db.Column(db.Float, nullable=False) # Quantity of item in stock.
     wholesale_price = db.Column(db.Float, nullable=False)
+    retail_price = db.Column(db.Float, nullable=False)
     alert_quantity = db.Column(db.Float, default=0.0) #Alert quantity of item.
-    buy_date = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc)) #Buy date of item.
+    buy_date = db.Column(db.DateTime, default=lambda: datetime.now()) #Buy date of item.
     expiry_duration = db.Column(db.Integer) #Expiry duration in number of months of item.
 
     def __repr__(self):
         return f'<Item {self.name}>'
+    
+    def to_dict(self):
+        return {
+                "name": self.name,
+                "size": self.size,
+                "quantity": self.quantity,
+                "buy_price": self.buy_price,
+                "wholesale_price": self.wholesale_price,
+                "retail_price": self.retail_price,
+                "alert_quantity": self.alert_quantity,
+                "buy_date": self.buy_date.isoformat() if self.buy_date else None,
+                "expiry_duration": self.expiry_duration 
+                }
     
 class Bill(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -31,7 +50,7 @@ class Bill(db.Model):
     item_id = db.Column(db.Integer, db.ForeignKey('item.id'), nullable=False)
     no_of_items = db.Column(db.Integer, nullable=False)
     total_price = db.Column(db.Float, nullable=False) #Total price of bill.
-    date = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    date = db.Column(db.DateTime, default=lambda: datetime.now())
 
     customer = db.relationship('Customer', backref=db.backref('bill', lazy=True))
     item = db.relationship('Item', backref=db.backref('bill', lazy=True))
