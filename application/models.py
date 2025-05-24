@@ -47,16 +47,23 @@ class Item(db.Model):
 class Bill(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     customer_id = db.Column(db.Integer, db.ForeignKey('customer.id'), nullable=False)
-    item_id = db.Column(db.Integer, db.ForeignKey('item.id'), nullable=False)
-    no_of_items = db.Column(db.Integer, nullable=False)
-    total_price = db.Column(db.Float, nullable=False) #Total price of bill.
+    no_of_items = db.Column(db.Integer, nullable=True, default=0)
+    total_price = db.Column(db.Float, default=0.0) #Total price of bill.
     date = db.Column(db.DateTime, default=lambda: datetime.now())
 
     customer = db.relationship('Customer', backref=db.backref('bill', lazy=True))
-    item = db.relationship('Item', backref=db.backref('bill', lazy=True))
 
     def __repr__(self):
         return f'<Bill {self.id}>'
+    
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "customer_id": self.customer_id,
+            "no_of_items": self.no_of_items,
+            "total_price": self.total_price,
+            "date": self.date.isoformat() if self.date else None 
+        }
     
 class BillxItems(db.Model):
     id = db.Column(db.Integer, primary_key=True)
