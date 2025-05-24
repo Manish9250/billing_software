@@ -2,12 +2,14 @@ from flask import Flask
 from application.database import db
 from application.config import LocalConfig
 from application.models import Customer, Item, Bill, BillxItems, CustomCustomerPrice
+from application.resources import * 
 
 
 def create_app():
     app = Flask(__name__)
     app.config.from_object(LocalConfig)
     db.init_app(app)
+    api.init_app(app)
     app.app_context().push()
 
     return app

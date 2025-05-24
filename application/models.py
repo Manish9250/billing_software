@@ -33,8 +33,8 @@ class Bill(db.Model):
     total_price = db.Column(db.Float, nullable=False) #Total price of bill.
     date = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
-    customer = db.relationship('Customers', backref=db.backref('bill', lazy=True))
-    item = db.relationship('Items', backref=db.backref('bill', lazy=True))
+    customer = db.relationship('Customer', backref=db.backref('bill', lazy=True))
+    item = db.relationship('Item', backref=db.backref('bill', lazy=True))
 
     def __repr__(self):
         return f'<Bill {self.id}>'
