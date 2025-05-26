@@ -6,6 +6,7 @@ from application.resources.customer import *
 from application.resources.item import item_bp
 from application.resources.bill import bill_bp
 from application.resources.billxitems import billxitems_bp
+from application.resources.custom_customer_price import custom_customer_price_bp
 
 
 def create_app():
@@ -21,6 +22,7 @@ app = create_app()
 app.register_blueprint(item_bp, url_prefix='/api')
 app.register_blueprint(bill_bp, url_prefix='/api')
 app.register_blueprint(billxitems_bp, url_prefix='/api')
+app.register_blueprint(custom_customer_price_bp, url_prefix='/api')
 
 from application.routes import *
 

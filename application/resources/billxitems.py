@@ -59,6 +59,11 @@ class BillxItemsResource(Resource):
             )
             db.session.add(billxitem)
             db.session.commit()
+
+            #Incrementing and updating total amount
+            
+
+
             return {'message': 'BillxItem created', 'id': billxitem.id}, 201
         except Exception as e:
             db.session.rollback()
@@ -77,6 +82,10 @@ class BillxItemsResource(Resource):
             billxitem.quantity = args['quantity']
             billxitem.price = args["price"]
             db.session.commit()
+
+            #Updating increamentor and total in bill
+
+
             return {'message': 'BillxItem updated'}
         except Exception as e:
             db.session.rollback()

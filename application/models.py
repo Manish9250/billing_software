@@ -89,3 +89,11 @@ class CustomCustomerPrice(db.Model):
 
     def __repr__(self):
         return f'<Custom_Customer_Price {self.id}>'
+    
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "customer_id": self.customer_id,
+            "item_id": self.item_id,
+            "price": self.price
+        }
