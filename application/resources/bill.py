@@ -36,7 +36,7 @@ class BillResource(Resource):
         return bill.to_dict(), 200
 
     #No need to update a bill
-    '''def put(self, bill_id):
+    def put(self, bill_id):
         bill = Bill.query.get(bill_id)
         if not bill:
             return {"message": "Bill not found"}
@@ -44,7 +44,7 @@ class BillResource(Resource):
         for key, value in data.items():
             setattr(bill, key, value)
         db.session.commit()
-        return bill.to_dict(), 200'''
+        return bill.to_dict(), 200
 
     def delete(self, bill_id):
         bill = Bill.query.get(bill_id)
@@ -57,6 +57,7 @@ class BillResource(Resource):
         except Exception as e:
                 db.session.rollback()
                 return {"message": str(e)}, 500 #Internal error
+        
         
 api.add_resource(BillListResource, '/bills')
 api.add_resource(BillResource, '/bills/<int:bill_id>')
