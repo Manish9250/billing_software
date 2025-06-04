@@ -51,30 +51,40 @@ const app = new Vue({
         }
     },
     template: `
-      <div>
-        <nav>
-          <div class="nav nav-tabs">
+      <div class="d-flex flex-column min-vh-100" >
+        <nav class="d-flex align-items-center justify-content-between">
+          <div class="nav nav-tabs flex-grow-1">
             <span v-for="tab in openTabs" :key="tab.path" class="nav-item">
               <router-link
                 :to="tab.path"
-                class="nav-link"
+                class="nav-link d-flex align-items-center justify-content-between"
                 :class="{ active: activeTab === tab.path }"
+                style="width: 150px;"
               >
-                {{ tab.name }}
+                <span
+                  style="flex:1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"
+                >
+                  {{ tab.name }}
+                </span>
                 <button
                   v-if="openTabs.length > 1"
-                  class="btn btn-sm btn-close ms-2"
+                  class="btn btn-sm btn-close align-self-center ms-2"
                   @click.prevent.stop="closeTab(tab.path)"
-                  style="font-size:0.7rem;vertical-align:middle;"
+                  style="font-size:0.7rem;vertical-align:middle; flex-shrink:0;"
                   title="Close tab"
                 ></button>
               </router-link>
             </span>
           </div>
+          <div class="mx-3 align-self-center">
+              <i class="bi bi-caret-down"></i>
+            </div>
         </nav>
         <search-bar></search-bar>
-        <router-view></router-view>
-        <foot></foot>
+        <div class="flex-grow-1 d-flex flex-column">
+      <router-view class="flex-grow-1 w-100"></router-view>
+    </div>
+        <foot class="mt-auto"></foot>
       </div>
     `,
     components: {
