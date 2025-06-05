@@ -17,7 +17,7 @@ export default {
       editing: { row: 0, col: 1 },
       columns: [
         { label: 'S.no.', key: 'sno', editable: false },
-        { label: 'Item code', key: 'itemCode', editable: true },
+        { label: 'Item code', key: 'itemCode', editable: false },
         { label: 'Item Name', key: 'itemName', editable: true },
         { label: 'Size', key: 'size', editable: true },
         { label: 'Buy Price', key: 'buyPrice', editable: true },
@@ -70,6 +70,7 @@ export default {
       moveAndEdit(rowIdx, editableCols[currentEditableColIdx + 1].idx);
     } else {
       let nextRow = rowIdx + 1;
+      this.saveRow(rowIdx);
       if (nextRow >= this.items.length) {
         this.addRow(() => {
           moveAndEdit(nextRow, editableCols[0].idx);
@@ -100,6 +101,7 @@ export default {
   }
 },
     addRow(callback) {
+      
       this.items.push({
         itemCode: '',
         itemName: '',
@@ -114,13 +116,92 @@ export default {
       this.$nextTick(() => {
         if (callback) callback();
       });
-    }
+    },
+
+    saveRow(rowIdx) {
+      const item = this.items[rowIdx];
+      // Only send if required fields are filled
+      if (item.itemName && item.size) {
+        const payload = {
+          name: item.itemName,
+          size: item.size,
+          buy_price: parseFloat(item.buyPrice) || 0,
+          quantity: parseFloat(item.quantity) || 0,
+          wholesale_price: parseFloat(item.wholesalePrice) || 0,
+          retail_price: parseFloat(item.retailPrice) || 0,
+          alert_quantity: parseFloat(item.alertQuantity) || 0,
+          expiry_duration: parseInt(item.expiryDuration) || 0
+        };
+        if (item.itemCode) {
+          // Existing item, use PUT
+          fetch(`/api/items/${item.itemCode}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+        } else {
+          // New item, use POST
+          fetch('/api/items', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          })
+          .then(res => res.json())
+          .then(data => {
+            // Save the returned id to avoid duplicate POSTs
+            if (data.id) this.items[rowIdx].itemCode = data.id;
+          })
+          .catch(err => {
+            // Handle error (show message, etc.)
+            console.error('Failed to save row:', err);
+          });
+        }
+      }
+    },
+
   },
   mounted() {
-    this.$nextTick(() => {
-      this.startEdit(0, 1);
-    });
+    // Fetch data from backend on mount
+    fetch('/api/items')
+      .then(res => res.json())
+      .then(data => {
+        // Map backend data to your table structure
+        this.items = data.map(item => ({
+          itemCode: item.id || '', // or item.itemCode if your backend uses that
+          itemName: item.name || '',
+          size: item.size || '',
+          buyPrice: item.buy_price || '',
+          quantity: item.quantity || '',
+          wholesalePrice: item.wholesale_price || '',
+          retailPrice: item.retail_price || '',
+          alertQuantity: item.alert_quantity || '',
+          expiryDuration: item.expiry_duration || ''
+        }));
+        // If no items, keep at least one empty row
+        if (this.items.length === 0) {
+          this.items.push({
+            itemCode: '',
+            itemName: '',
+            size: '',
+            buyPrice: '',
+            quantity: '',
+            wholesalePrice: '',
+            retailPrice: '',
+            alertQuantity: '',
+            expiryDuration: ''
+          });
+        }
+        // Start editing the first editable cell
+        this.$nextTick(() => {
+          this.startEdit(this.items.length-1, this.columns.length - 1);
+        });
+      })
+      .catch(err => {
+        // Handle error (optional)
+        console.error('Failed to fetch items:', err);
+      });
   },
+  
   render(h) {
     return h('div', { class: 'row border', style: { height: '100%' } }, [
       h('div', { class: 'col', style: { height: '450px', overflowY: 'auto', minHeight: 0 } }, [
