@@ -1,5 +1,6 @@
 // Remove import statements if using CDN
 
+import BillPage from "./components/BillPage.js"
 import InventoryManagement from "./components/InventoryManagement.js"
 import SearchBar from "./components/SearchBar.js"
 
@@ -10,7 +11,8 @@ const Foot = { template: '<div class="text-center">Welcome to Laxmi Store</div>'
 const routes = [
     { path: '/', component: Home, name: 'Home' },
     { path: '/dashboard', component: Dashboard, name: 'Dashboard' },
-    { path: '/inventoryManagement', component: InventoryManagement, name: 'Inventory Management' }
+    { path: '/inventoryManagement', component: InventoryManagement, name: 'Inventory Management' },
+    { path: '/bill/:billId', component: BillPage, name: 'Bill', props: true }
 ];
 
 const router = new VueRouter({ routes });
@@ -48,7 +50,23 @@ const app = new Vue({
                     if (nextTab) this.$router.push(nextTab.path);
                 }
             }
-        }
+        },
+        addBillTab() {
+          // Find the highest bill number in openTabs
+          const billTabs = this.openTabs.filter(tab => tab.path.startsWith('/bill/'));
+          let maxBillId = 0;
+          billTabs.forEach(tab => {
+              const match = tab.path.match(/\/bill\/(\d+)/);
+              if (match) {
+                  maxBillId = Math.max(maxBillId, parseInt(match[1]));
+              }
+          });
+          const newBillId = maxBillId + 1;
+          const newPath = `/bill/${newBillId}`;
+          this.openTabs.push({ path: newPath, name: `Bill #${newBillId}` });
+          this.activeTab = newPath;
+          this.$router.push(newPath);
+      }
     },
     template: `
       <div class="d-flex flex-column min-vh-100" >
@@ -80,7 +98,7 @@ const app = new Vue({
               <i class="bi bi-caret-down"></i>
             </div>
         </nav>
-        <search-bar></search-bar>
+        <search-bar @add-bill-tab="addBillTab"></search-bar>
         <div class="flex-grow-1 d-flex flex-column">
       <router-view class="flex-grow-1 w-100"></router-view>
     </div>

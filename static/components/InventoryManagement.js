@@ -65,6 +65,25 @@ export default {
 
   if (e.key === 'Enter' || e.key === 'ArrowRight') {
     e.preventDefault();
+    // Evaluate expression if input starts with '='
+    const colKey = this.columns[colIdx].key;
+    let val = this.items[rowIdx][colKey];
+    if (typeof val === 'string' && val.trim().startsWith('=')) {
+      try {
+        // Only allow numbers and math operators for safety
+        const expr = val.trim().slice(1);
+        if (/^[\d+\-*/().\s]+$/.test(expr)) {
+          // eslint-disable-next-line no-eval
+          const result = eval(expr);
+          if (!isNaN(result)) {
+            this.items[rowIdx][colKey] = result;
+          }
+        }
+      } catch (err) {
+        // Optionally show error or ignore
+      }
+    }
+
     if (currentEditableColIdx < editableCols.length - 1) {
       moveAndEdit(rowIdx, editableCols[currentEditableColIdx + 1].idx);
     } else {
@@ -231,7 +250,7 @@ export default {
                   on: {
                     click: () => this.startEdit(rowIdx, colIdx)
                   },
-                  style: { cursor: col.editable ? 'pointer' : 'default' }
+                  style: { height: "40px",cursor: col.editable ? 'pointer' : 'default' }
                 }, item[col.key]);
               }))
             ))

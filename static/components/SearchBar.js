@@ -13,12 +13,12 @@ export default {
                     Home
                 </router-link>
                 </button>
-                <button class="btn btn-outline-primary mx-1 d-flex align-items-center">
+                <button class="btn btn-outline-primary mx-1 d-flex align-items-center" @click="addBillTab">
                     <span class="me-1">
                         <!-- Receipt/Bill SVG -->
                         <i class="bi bi-receipt"></i>
                     </span>
-                    Bill
+                    New Bill
                 </button>
                 <button class="btn btn-outline-primary mx-1 d-flex align-items-center">
                     <router-link to="/inventoryManagement" class="text-decoration-none text-reset d-flex align-items-center">
@@ -60,5 +60,10 @@ export default {
             </div>
         </div>
     </div>
-    `
+    `,
+    methods: {
+        addBillTab() {
+            this.$emit('add-bill-tab');
+        }
+    }
 }
