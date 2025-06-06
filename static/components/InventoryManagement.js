@@ -16,7 +16,6 @@ export default {
       ],
       editing: { row: 0, col: 1 },
       columns: [
-        { label: 'S.no.', key: 'sno', editable: false },
         { label: 'Item code', key: 'itemCode', editable: false },
         { label: 'Item Name', key: 'itemName', editable: true },
         { label: 'Size', key: 'size', editable: true },
@@ -177,6 +176,7 @@ export default {
           alertQuantity: item.alert_quantity || '',
           expiryDuration: item.expiry_duration || ''
         }));
+        this.addRow();
         // If no items, keep at least one empty row
         if (this.items.length === 0) {
           this.items.push({
@@ -193,7 +193,7 @@ export default {
         }
         // Start editing the first editable cell
         this.$nextTick(() => {
-          this.startEdit(this.items.length-1, this.columns.length - 1);
+          this.startEdit(this.items.length-1, 2);
         });
       })
       .catch(err => {
@@ -213,9 +213,6 @@ export default {
             ]),
             h('tbody', this.items.map((item, rowIdx) =>
               h('tr', this.columns.map((col, colIdx) => {
-                if (col.key === 'sno') {
-                  return h('td', rowIdx + 1);
-                }
                 if (this.editing.row === rowIdx && this.editing.col === colIdx) {
                   return h('td', [
                     h('input', {
