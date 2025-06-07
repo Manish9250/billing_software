@@ -61,6 +61,39 @@ export default {
         alert('Could not add item: ' + err.message);
       });
     },
+    fetchBillData() {
+      // Fetch bill data from backend
+      fetch(`/api/bills/${this.billId}`)
+        .then(res => res.json())
+        .then(bill => {
+          // Set customer details
+          this.customerName = bill.customer_name || '';
+          this.customerMobile = bill.customer_phone || '';
+          this.customerUnpaid = bill.unpaid_money || 0;
+          // Set bill type if available (fallback to 'retail')
+          this.billType = bill.customer_type === 'wholesale' ? 'wholesale' : 'retail';
+          // Set items
+          this.items = (bill.items || []).map(item => ({
+            itemId: item.item_id,
+            itemName: item.item_name,
+            size: item.item_size,
+            quantity: item.quantity,
+            rate: item.price,
+            suggestions: [],
+            sizeSuggestions: [],
+            matchedItems: []
+          }));
+          // If no items, add a blank row
+          if (this.items.length === 0) {
+            this.addRow();
+          }
+        })
+        .catch(() => {
+          // On error, keep default blank bill
+          this.items = [];
+          this.addRow();
+        });
+    },
     fetchItemSuggestions(idx, query) {
       if (!query) {
         this.$set(this.items[idx], 'suggestions', []);
@@ -140,40 +173,20 @@ export default {
             : matched.retail_price;
         }
       });
+    },
+    billId: {
+    immediate: true,
+    handler() {
+      // Reset all bill fields
+      this.billType = 'retail';
+      this.customerName = '';
+      this.customerMobile = '';
+      this.customerUnpaid = 0;
+      this.items = [];
+      // Fetch new bill data
+      this.fetchBillData();
     }
-  },
-  mounted() {
-    // Fetch bill data from backend
-    fetch(`/api/bills/${this.billId}`)
-      .then(res => res.json())
-      .then(bill => {
-        // Set customer details
-        this.customerName = bill.customer_name || '';
-        this.customerMobile = bill.customer_phone || '';
-        this.customerUnpaid = bill.unpaid_money || 0;
-        // Set bill type if available (fallback to 'retail')
-        this.billType = bill.customer_type === 'wholesale' ? 'wholesale' : 'retail';
-        // Set items
-        this.items = (bill.items || []).map(item => ({
-          itemId: item.item_id,
-          itemName: item.item_name,
-          size: item.item_size,
-          quantity: item.quantity,
-          rate: item.price,
-          suggestions: [],
-          sizeSuggestions: [],
-          matchedItems: []
-        }));
-        // If no items, add a blank row
-        if (this.items.length === 0) {
-          this.addRow();
-        }
-      })
-      .catch(() => {
-        // On error, keep default blank bill
-        this.items = [];
-        this.addRow();
-      });
+  }
   },
   template: `
     <div class="container mt-3 mx-auto" >
