@@ -54,6 +54,7 @@ export default {
     fetchSizeSuggestions(idx, itemName, query) {
       if (!itemName) {
         this.$set(this.items[idx], 'sizeSuggestions', []);
+        this.$set(this.items[idx], 'matchedItems', []);
         return;
       }
       let url = `/api/items?name=${encodeURIComponent(itemName)}`;
@@ -64,12 +65,50 @@ export default {
           // Unique sizes only
           const sizes = [...new Set(data.map(item => item.size))];
           this.$set(this.items[idx], 'sizeSuggestions', sizes);
+          this.$set(this.items[idx], 'matchedItems', data); // Store all matching items
         })
-        .catch(() => this.$set(this.items[idx], 'sizeSuggestions', []));
+        .catch(() => {
+          this.$set(this.items[idx], 'sizeSuggestions', []);
+          this.$set(this.items[idx], 'matchedItems', []);
+        });
     },
     selectSizeSuggestion(idx, suggestion) {
       this.items[idx].size = suggestion;
       this.$set(this.items[idx], 'sizeSuggestions', []);
+      // Find the matching item object
+      const matchedItems = this.items[idx].matchedItems || [];
+      const matched = matchedItems.find(item => item.size === suggestion);
+      if (matched) {
+        this.items[idx].rate = this.billType === 'wholesale'
+          ? matched.wholesale_price
+          : matched.retail_price;
+      }
+    },
+    selectFirstItemSuggestion(idx) {
+        const suggestions = this.items[idx].suggestions;
+        if (suggestions && suggestions.length) {
+        this.selectItemSuggestion(idx, suggestions[0]);
+        }
+    },
+    selectFirstSizeSuggestion(idx) {
+        const suggestions = this.items[idx].sizeSuggestions;
+        if (suggestions && suggestions.length) {
+        this.selectSizeSuggestion(idx, suggestions[0]);
+        }
+    }
+  },
+  watch: {
+    billType() {
+      // Update rates for all items when bill type changes
+      this.items.forEach((item, idx) => {
+        const matchedItems = item.matchedItems || [];
+        const matched = matchedItems.find(i => i.size === item.size);
+        if (matched) {
+          item.rate = this.billType === 'wholesale'
+            ? matched.wholesale_price
+            : matched.retail_price;
+        }
+      });
     }
   },
   template: `
@@ -117,6 +156,7 @@ export default {
                      placeholder="Item Name"
                      @input="fetchItemSuggestions(idx, item.itemName)"
                      @focus="fetchItemSuggestions(idx, item.itemName)"
+                     @keydown.enter.prevent="selectFirstItemSuggestion(idx)"
                      autocomplete="off"
               />
               <ul v-if="item.suggestions && item.suggestions.length"
@@ -136,6 +176,7 @@ export default {
                      placeholder="Size"
                      @input="fetchSizeSuggestions(idx, item.itemName, item.size)"
                      @focus="fetchSizeSuggestions(idx, item.itemName, item.size)"
+                     @keydown.enter.prevent="selectFirstSizeSuggestion(idx)"
                      autocomplete="off"
               />
               <ul v-if="item.sizeSuggestions && item.sizeSuggestions.length"
