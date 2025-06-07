@@ -42,28 +42,15 @@ class BillxItemsResource(Resource):
         if not bill or not item:
             return {'message': 'Bill or Item not found'}, 404
         
-        #Logic for getting price(wholesale_price or retail_price)
-        customer_id = bill.customer_id
-        customer = Customer.query.get(customer_id)
-        if customer.type == 0:
-            price = item.wholesale_price
-        else:
-            price = item.retail_price
-        
         try: 
             billxitem = BillxItems(
                 bill_id=args['bill_id'],
                 item_id=args['item_id'],
                 quantity=args['quantity'],
-                price=price         
+                price=args['price']         
             )
             db.session.add(billxitem)
             db.session.commit()
-
-            #Incrementing and updating total amount
-            
-
-
             return {'message': 'BillxItem created', 'id': billxitem.id}, 201
         except Exception as e:
             db.session.rollback()

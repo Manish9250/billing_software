@@ -20,7 +20,7 @@ export default {
   },
   methods: {
     addRow() {
-      this.items.push({ itemName: '', size: '', quantity: 1, rate: 0, suggestions: [], sizeSuggestions: [] });
+      this.items.push({ itemId: null, itemName: '', size: '', quantity: 1, rate: 0, suggestions: [], sizeSuggestions: [] });
     },
     removeRow(idx) {
       if (this.items.length > 1) this.items.splice(idx, 1);
@@ -29,6 +29,37 @@ export default {
       const qty = parseFloat(item.quantity) || 0;
       const rate = parseFloat(item.rate) || 0;
       return qty * rate;
+    },
+    onAmountEnter(idx) {
+      const item = this.items[idx];
+      // You may need to fetch item_id based on itemName/size, adjust as needed
+      const payload = {
+        bill_id: parseInt(this.billId),
+        item_id: item.itemId || null, // Make sure item_id is set in your items!
+        quantity: parseFloat(item.quantity) || 0,
+        price: parseFloat(item.rate) || 0
+      };
+      fetch('/api/billxitems', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      })
+      .then(res => {
+        if (!res.ok) throw new Error('Failed to add item');
+        return res.json();
+      })
+      .then(() => {
+        this.addRow();
+        // Optionally, focus the new row's first input
+        this.$nextTick(() => {
+          const newIdx = this.items.length - 1;
+          const el = this.$el.querySelector(`input[placeholder="Item Name"]:nth-of-type(${newIdx + 1})`);
+          if (el) el.focus();
+        });
+      })
+      .catch(err => {
+        alert('Could not add item: ' + err.message);
+      });
     },
     fetchItemSuggestions(idx, query) {
       if (!query) {
@@ -81,6 +112,7 @@ export default {
         this.items[idx].rate = this.billType === 'wholesale'
           ? matched.wholesale_price
           : matched.retail_price;
+          this.items[idx].itemId = matched.id;
       }
     },
     selectFirstItemSuggestion(idx) {
@@ -123,6 +155,7 @@ export default {
         this.billType = bill.customer_type === 'wholesale' ? 'wholesale' : 'retail';
         // Set items
         this.items = (bill.items || []).map(item => ({
+          itemId: item.item_id,
           itemName: item.item_name,
           size: item.item_size,
           quantity: item.quantity,
@@ -228,7 +261,14 @@ export default {
             </td>
             <td><input v-model.number="item.quantity" type="number" min="1" class="form-control" /></td>
             <td><input v-model.number="item.rate" type="number" min="0" class="form-control" /></td>
-            <td>{{ amount(item).toFixed(2) }}</td>
+            <td>
+            <input type="number"
+                  class="form-control"
+                  min="0"
+                  :value="amount(item)"
+                  @input="onAmountInput(idx, $event.target.value)"
+                  @keydown.enter.prevent="onAmountEnter(idx)" />
+          </td>
             <td>
               <button class="btn btn-sm btn-danger" @click="removeRow(idx)" v-if="items.length > 1">
                 <i class="bi bi-trash"></i>
