@@ -63,7 +63,7 @@ class CustomerResource(Resource): #For updating and deleting a specific customer
         data = request.get_json(force=True)  # <-- get JSON body
         name = data.get('name')
         phone = data.get('phone')
-        cust_type = data.get('type', 1)
+        cust_type = data.get('type', 0)
         unpaid_money = data.get('unpaid_money', 0.0)
         try:
 
@@ -73,7 +73,7 @@ class CustomerResource(Resource): #For updating and deleting a specific customer
                 customer.phone = phone
             if unpaid_money:
                 customer.unpaid_money = unpaid_money
-            if cust_type:
+            if cust_type is not None:
                 customer.type = cust_type
 
             db.session.commit()

@@ -41,13 +41,17 @@ export default {
         if (el) el.focus();
       });
     },
-    saveUnpaid() {
+    saveUnpaid() { //Saves data related to customer
       this.editingUnpaid = false;
       if (!this.customerId) return;
       fetch(`/api/customers/${this.customerId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ unpaid_money: this.customerUnpaid })
+        body: JSON.stringify({ unpaid_money: this.customerUnpaid,
+          phone: this.customerMobile,
+          name: this.customerName,
+          type: this.billType === 'wholesale' ? 0 : 1 
+         })
       })
       .then(res => {
         if (!res.ok) throw new Error('Failed to update unpaid');
@@ -206,6 +210,7 @@ export default {
       });
   },
   selectCustomerSuggestion(suggestion) {
+    this.customerId = suggestion.id;
     this.customerName = suggestion.name;
     this.customerMobile = suggestion.phone || '';
     this.customerUnpaid = suggestion.unpaid_money || 0;
@@ -228,6 +233,7 @@ export default {
             : matched.retail_price;
         }
       });
+      this.saveUnpaid();
     },
     billId: {
     immediate: true,
@@ -262,6 +268,7 @@ export default {
                     @input="fetchCustomerSuggestions(customerName)"
                     @focus="fetchCustomerSuggestions(customerName)"
                     @blur="hideCustomerSuggestions"
+                    @keydown.enter="saveUnpaid"
                     autocomplete="off"
               />
               <span v-if="customerUnpaid !== null" @click.stop="startEditUnpaid" class="badge bg-warning text-dark ms-2" style="cursor:pointer;">
@@ -294,7 +301,7 @@ export default {
         </div>
         <div class="col-md-4 mb-2">
           <label class="form-label">Mobile Number</label>
-          <input v-model="customerMobile" class="form-control" placeholder="Enter mobile number" />
+          <input v-model="customerMobile" class="form-control" placeholder="Enter mobile number" @keydown.enter="saveUnpaid"/>
         </div>
         <div class="col-md-4 mb-2 d-flex align-items-end">
           <select v-model="billType" class="form-select w-auto">
@@ -378,7 +385,7 @@ export default {
         <tfoot>
           <tr>
             <td colspan="5" class="text-end fw-bold">Grand Total</td>
-            <td colspan="2" class="fw-bold">{{ grandTotal.toFixed(2) }}</td>
+            <td colspan="2" class="fw-bold">₹{{ grandTotal.toFixed(2) }}</td>
           </tr>
         </tfoot>
       </table>
