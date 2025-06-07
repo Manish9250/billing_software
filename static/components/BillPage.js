@@ -25,6 +25,12 @@ export default {
   methods: {
     addRow() {
       this.items.push({ itemId: null, itemName: '', size: '', quantity: 1, rate: 0, suggestions: [], sizeSuggestions: [] });
+      this.$nextTick(() => {
+        const container = this.$refs.tableContainer;
+        if (container) {
+          container.scrollTop = container.scrollHeight;
+        }
+      });
     },
     removeRow(idx) {
       if (this.items.length > 1) this.items.splice(idx, 1);
@@ -118,11 +124,19 @@ export default {
           // If no items, add a blank row
           if (this.items.length === 0) {
             this.addRow();
+            this.addRow();
+            this.addRow();
+            this.addRow();
+            this.addRow();
           }
         })
         .catch(() => {
           // On error, keep default blank bill
           this.items = [];
+          this.addRow();
+          this.addRow();
+          this.addRow();
+          this.addRow();
           this.addRow();
         });
     },
@@ -251,14 +265,15 @@ export default {
   },
   template: `
     <div class="container mt-3 mx-auto" >
-      <div class="d-flex align-items-center mb-2">
+      
+      <div class="row mb-3">
+      <div class="d-flex col-md-2 align-items-center">
         <h5 class="me-3 mb-0">Bill #{{ billId }}</h5>
         <span class="badge" :class="billType === 'wholesale' ? 'bg-primary' : 'bg-success'">
           {{ billType.charAt(0).toUpperCase() + billType.slice(1) }}
         </span>
       </div>
-      <div class="row mb-3">
-        <div class="col-md-4 mb-2">
+        <div class="col-md-3">
           <label class="form-label">Customer Name</label>
           <div class="d-flex align-items-center">
             <div class="d-flex align-items-center position-relative">
@@ -299,17 +314,22 @@ export default {
             </div>
           </div>
         </div>
-        <div class="col-md-4 mb-2">
+        <div class="col-md-3 ">
           <label class="form-label">Mobile Number</label>
           <input v-model="customerMobile" class="form-control" placeholder="Enter mobile number" @keydown.enter="saveUnpaid"/>
         </div>
-        <div class="col-md-4 mb-2 d-flex align-items-end">
+        <div class="col-md-2 d-flex align-items-end">
           <select v-model="billType" class="form-select w-auto">
             <option value="retail">Retail</option>
             <option value="wholesale">Wholesale</option>
           </select>
         </div>
+        <button class="btn btn-lg col-md-2 btn-primary d-flex align-items-center gap-2 shadow-sm ms-auto"  @click="addRow">
+          <i class="bi bi-plus-circle" style="font-size:1.5rem;"></i>
+          Add Item
+        </button>
       </div>
+      <div class="table-responsive" ref="tableContainer" style="max-height: 380px; overflow-y: auto;">
       <table class="table table-bordered align-middle">
         <thead>
           <tr>
@@ -389,9 +409,8 @@ export default {
           </tr>
         </tfoot>
       </table>
-      <button class="btn btn-primary" @click="addRow">
-        <i class="bi bi-plus"></i> Add Item
-      </button>
+      </div>
+      
     </div>
   `
 };
