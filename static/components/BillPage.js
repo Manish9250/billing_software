@@ -3,10 +3,14 @@ export default {
   data() {
     return {
       billType: 'retail',
+      customerId: null,
       customerName: '',
       customerMobile: '',
       customerUnpaid: 0,
-      items: []
+      editingUnpaid: false,
+      items: [],
+      customerSuggestions: [],  
+      showCustomerSuggestions: false
     };
   },
   computed: {
@@ -29,6 +33,29 @@ export default {
       const qty = parseFloat(item.quantity) || 0;
       const rate = parseFloat(item.rate) || 0;
       return qty * rate;
+    },
+    startEditUnpaid() {
+      this.editingUnpaid = true;
+      this.$nextTick(() => {
+        const el = this.$el.querySelector('#unpaidInput');
+        if (el) el.focus();
+      });
+    },
+    saveUnpaid() {
+      this.editingUnpaid = false;
+      if (!this.customerId) return;
+      fetch(`/api/customers/${this.customerId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ unpaid_money: this.customerUnpaid })
+      })
+      .then(res => {
+        if (!res.ok) throw new Error('Failed to update unpaid');
+        return res.json();
+      })
+      .catch(err => {
+        alert('Could not update unpaid: ' + err.message);
+      });
     },
     onAmountEnter(idx) {
       const item = this.items[idx];
@@ -67,6 +94,7 @@ export default {
         .then(res => res.json())
         .then(bill => {
           // Set customer details
+          this.customerId = bill.customer_id || null;
           this.customerName = bill.customer_name || '';
           this.customerMobile = bill.customer_phone || '';
           this.customerUnpaid = bill.unpaid_money || 0;
@@ -236,8 +264,20 @@ export default {
                     @blur="hideCustomerSuggestions"
                     autocomplete="off"
               />
-              <span v-if="customerUnpaid" class="badge bg-warning text-dark ms-2">
-                Unpaid: ₹{{ customerUnpaid }}
+              <span v-if="customerUnpaid !== null" @click.stop="startEditUnpaid" class="badge bg-warning text-dark ms-2" style="cursor:pointer;">
+                <template v-if="!editingUnpaid">
+                  Unpaid: ₹{{ customerUnpaid }}
+                </template>
+                <template v-else>
+                  <input id="unpaidInput"
+                        type="number"
+                        class="form-control form-control-sm d-inline-block"
+                        style="width:80px;"
+                        v-model.number="customerUnpaid"
+                        @keydown.enter="saveUnpaid"
+                        @blur="editingUnpaid = false"
+                  />
+                </template>
               </span>
               <ul v-if="showCustomerSuggestions && customerSuggestions.length"
                   class="list-group position-absolute w-100"
