@@ -61,10 +61,28 @@ class Bill(db.Model):
         return {
             "id": self.id,
             "customer_id": self.customer_id,
+            "customer_name": self.customer.name if self.customer else None,
+            "customer_phone": self.customer.phone if self.customer else None,
+            "customer_type": self.customer.type if self.customer else None,
+            "unpaid_money": self.customer.unpaid_money if self.customer else None,
             "no_of_items": self.no_of_items,
             "total_price": self.total_price,
-            "date": self.date.isoformat() if self.date else None 
+            "date": self.date.isoformat() if self.date else None,
+            "items": self.items_json()  # Include items in the bill
         }
+    def items_json(self):
+        """Return all BillxItems for this bill as a list of dicts (JSON serializable)."""
+        return [
+            {
+                "id": bxi.id,
+                "item_id": bxi.item_id,
+                "item_name": bxi.item.name if bxi.item else None,
+                "item_size": bxi.item.size if bxi.item else None,
+                "quantity": bxi.quantity,
+                "price": bxi.price
+            }
+            for bxi in self.bill_x_items
+        ]
     
 class BillxItems(db.Model):
     id = db.Column(db.Integer, primary_key=True)

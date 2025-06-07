@@ -5,12 +5,10 @@ import InventoryManagement from "./components/InventoryManagement.js"
 import SearchBar from "./components/SearchBar.js"
 
 const Home = { template: '<div>Home</div>' }
-const Dashboard = { template: '<div>Dashboard</div>' }
 const Foot = { template: '<div class="text-center">Welcome to Laxmi Store</div>' }
 
 const routes = [
     { path: '/', component: Home, name: 'Home' },
-    { path: '/dashboard', component: Dashboard, name: 'Dashboard' },
     { path: '/inventoryManagement', component: InventoryManagement, name: 'Inventory Management' },
     { path: '/bill/:billId', component: BillPage, name: 'Bill', props: true }
 ];
@@ -22,8 +20,7 @@ const app = new Vue({
     router,
     data: {
         openTabs: [
-            { path: '/', name: 'Home' },
-            { path: '/dashboard', name: 'Dashboard' }
+            { path: '/', name: 'Home' }
         ],
         activeTab: '/'
     },
@@ -52,20 +49,28 @@ const app = new Vue({
             }
         },
         addBillTab() {
-          // Find the highest bill number in openTabs
-          const billTabs = this.openTabs.filter(tab => tab.path.startsWith('/bill/'));
-          let maxBillId = 0;
-          billTabs.forEach(tab => {
-              const match = tab.path.match(/\/bill\/(\d+)/);
-              if (match) {
-                  maxBillId = Math.max(maxBillId, parseInt(match[1]));
-              }
+          // Send POST request to create a new bill
+          fetch('/api/bills', {
+              method: 'POST',
+              headers: {
+                  'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({ customer_id: 1 })
+          })
+          .then(res => {
+              if (!res.ok) throw new Error('Failed to create bill');
+              return res.json();
+          })
+          .then(bill => {
+              const billId = bill.id;
+              const newPath = `/bill/${billId}`;
+              this.openTabs.push({ path: newPath, name: `Bill #${billId}` });
+              this.activeTab = newPath;
+              this.$router.push(newPath);
+          })
+          .catch(err => {
+              alert('Could not create new bill: ' + err.message);
           });
-          const newBillId = maxBillId + 1;
-          const newPath = `/bill/${newBillId}`;
-          this.openTabs.push({ path: newPath, name: `Bill #${newBillId}` });
-          this.activeTab = newPath;
-          this.$router.push(newPath);
       }
     },
     template: `

@@ -5,9 +5,8 @@ export default {
       billType: 'retail',
       customerName: '',
       customerMobile: '',
-      items: [
-        { itemName: '', size: '', quantity: 1, rate: 0, suggestions: [], sizeSuggestions: [] }
-      ]
+      customerUnpaid: 0,
+      items: []
     };
   },
   computed: {
@@ -111,6 +110,38 @@ export default {
       });
     }
   },
+  mounted() {
+    // Fetch bill data from backend
+    fetch(`/api/bills/${this.billId}`)
+      .then(res => res.json())
+      .then(bill => {
+        // Set customer details
+        this.customerName = bill.customer_name || '';
+        this.customerMobile = bill.customer_phone || '';
+        this.customerUnpaid = bill.unpaid_money || 0;
+        // Set bill type if available (fallback to 'retail')
+        this.billType = bill.customer_type === 'wholesale' ? 'wholesale' : 'retail';
+        // Set items
+        this.items = (bill.items || []).map(item => ({
+          itemName: item.item_name,
+          size: item.item_size,
+          quantity: item.quantity,
+          rate: item.price,
+          suggestions: [],
+          sizeSuggestions: [],
+          matchedItems: []
+        }));
+        // If no items, add a blank row
+        if (this.items.length === 0) {
+          this.addRow();
+        }
+      })
+      .catch(() => {
+        // On error, keep default blank bill
+        this.items = [];
+        this.addRow();
+      });
+  },
   template: `
     <div class="container mt-3 mx-auto" >
       <div class="d-flex align-items-center mb-2">
@@ -122,7 +153,12 @@ export default {
       <div class="row mb-3">
         <div class="col-md-4 mb-2">
           <label class="form-label">Customer Name</label>
-          <input v-model="customerName" class="form-control" placeholder="Enter customer name" />
+          <div class="d-flex align-items-center">
+            <input v-model="customerName" class="form-control" placeholder="Enter customer name" />
+            <span v-if="customerUnpaid" class="badge bg-warning text-dark ms-2">
+              Unpaid: ₹{{ customerUnpaid }}
+            </span>
+          </div>
         </div>
         <div class="col-md-4 mb-2">
           <label class="form-label">Mobile Number</label>
