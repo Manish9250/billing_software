@@ -1,48 +1,48 @@
-from flask_restful import Resource, Api, reqparse
+from flask_restful import Resource, Api, reqparse, request
 from ..models import Customer
 from ..database import db
 
 api = Api()
 
-# Argument parser
-parser = reqparse.RequestParser()
-parser.add_argument('name', type=str, required=False)
-parser.add_argument('phone', type=str, required=False)
-parser.add_argument('type', type=int, required=False) #Type of customer: Wholesale(0), Retail(1).
-parser.add_argument('unpaid_money', type=float, required=False)
-
 # Resources
 class CustomerList(Resource): #For listing and creating customers
     def get(self):
-        args = parser.parse_args()
         query = Customer.query
+        name = request.args.get('name')
+        phone = request.args.get('phone')
 
-        if args['name']:
-            query = query.filter(Customer.name.ilike(f"%{args['name']}%"))
-        if args['phone']:
-            query = query.filter(Customer.phone.ilike(f"%{args['phone']}%"))
+        if name:
+            query = query.filter(Customer.name.ilike(f"%{name}%"))
+        if phone:
+            query = query.filter(Customer.phone.ilike(f"%{phone}%"))
 
         customers = query.all()
         return [{
             "id": c.id,
             "name": c.name,
             "phone": c.phone,
-            "unpaid_money": c.unpaid_money
+            "unpaid_money": c.unpaid_money,
+            "type": c.type
         } for c in customers], 200
 
     def post(self):
-        args = parser.parse_args()
-        if args['name'] and args['phone']:
+        data = request.get_json(force=True)  # <-- get JSON body
+        name = data.get('name')
+        phone = data.get('phone')
+        cust_type = data.get('type', 1)
+        unpaid_money = data.get('unpaid_money', 0.0)
+
+        if name and phone:
             try:
-                existing_customer = Customer.query.filter_by(name=args['name']).first()
+                existing_customer = Customer.query.filter_by(name=name).first()
                 if existing_customer:
                     return {"message": "Customer already exists"}, 400
 
                 customer = Customer(
-                    name=args['name'],
-                    phone=args['phone'],
-                    type=args.get('type', 1),  # Default to Retail if not provided
-                    unpaid_money=args.get('unpaid_money', 0.0)
+                    name=name,
+                    phone=phone,
+                    type=cust_type,
+                    unpaid_money=unpaid_money
                 )
                 db.session.add(customer)
                 db.session.commit()
@@ -50,7 +50,7 @@ class CustomerList(Resource): #For listing and creating customers
             except Exception as e:
                 db.session.rollback()
                 return {"message": str(e)}, 500
-            
+
         return {"message": "Name and phone are required"}, 400
             
 class CustomerResource(Resource): #For updating and deleting a specific customer
@@ -60,15 +60,21 @@ class CustomerResource(Resource): #For updating and deleting a specific customer
         if not customer:
             return {"message": "Customer not found"}, 404
         
-        args = parser.parse_args()
+        data = request.get_json(force=True)  # <-- get JSON body
+        name = data.get('name')
+        phone = data.get('phone')
+        cust_type = data.get('type', 1)
+        unpaid_money = data.get('unpaid_money', 0.0)
         try:
 
-            if args['name']:
-                customer.name = args['name']
-            if args['phone']:
-                customer.phone = args['phone']
-            if args['unpaid_money'] is not None:
-                customer.unpaid_money = args['unpaid_money']
+            if name:
+                customer.name = name
+            if phone:
+                customer.phone = phone
+            if unpaid_money:
+                customer.unpaid_money = unpaid_money
+            if cust_type:
+                customer.type = cust_type
 
             db.session.commit()
             return {"message": "Customer updated"}, 200

@@ -71,7 +71,7 @@ export default {
           this.customerMobile = bill.customer_phone || '';
           this.customerUnpaid = bill.unpaid_money || 0;
           // Set bill type if available (fallback to 'retail')
-          this.billType = bill.customer_type === 'wholesale' ? 'wholesale' : 'retail';
+          this.billType = bill.customer_type === 0 ? 'wholesale' : 'retail';
           // Set items
           this.items = (bill.items || []).map(item => ({
             itemId: item.item_id,
@@ -159,7 +159,34 @@ export default {
         if (suggestions && suggestions.length) {
         this.selectSizeSuggestion(idx, suggestions[0]);
         }
+    },
+    fetchCustomerSuggestions(query) {
+    if (!query) {
+      this.customerSuggestions = [];
+      this.showCustomerSuggestions = false;
+      return;
     }
+    fetch(`/api/customers?name=${encodeURIComponent(query)}`)
+      .then(res => res.json())
+      .then(data => {
+        this.customerSuggestions = data;
+        this.showCustomerSuggestions = true;
+      })
+      .catch(() => {
+        this.customerSuggestions = [];
+        this.showCustomerSuggestions = false;
+      });
+  },
+  selectCustomerSuggestion(suggestion) {
+    this.customerName = suggestion.name;
+    this.customerMobile = suggestion.phone || '';
+    this.customerUnpaid = suggestion.unpaid_money || 0;
+    this.billType = suggestion.type === 0 ? 'wholesale' : 'retail';
+    this.showCustomerSuggestions = false;
+  },
+  hideCustomerSuggestions() {
+    setTimeout(() => { this.showCustomerSuggestions = false; }, 200);
+  }
   },
   watch: {
     billType() {
@@ -200,10 +227,29 @@ export default {
         <div class="col-md-4 mb-2">
           <label class="form-label">Customer Name</label>
           <div class="d-flex align-items-center">
-            <input v-model="customerName" class="form-control" placeholder="Enter customer name" />
-            <span v-if="customerUnpaid" class="badge bg-warning text-dark ms-2">
-              Unpaid: ₹{{ customerUnpaid }}
-            </span>
+            <div class="d-flex align-items-center position-relative">
+              <input v-model="customerName"
+                    class="form-control"
+                    placeholder="Enter customer name"
+                    @input="fetchCustomerSuggestions(customerName)"
+                    @focus="fetchCustomerSuggestions(customerName)"
+                    @blur="hideCustomerSuggestions"
+                    autocomplete="off"
+              />
+              <span v-if="customerUnpaid" class="badge bg-warning text-dark ms-2">
+                Unpaid: ₹{{ customerUnpaid }}
+              </span>
+              <ul v-if="showCustomerSuggestions && customerSuggestions.length"
+                  class="list-group position-absolute w-100"
+                  style="z-index:2000; top:100%; left:0;">
+                <li v-for="suggestion in customerSuggestions"
+                    :key="suggestion.id"
+                    class="list-group-item list-group-item-action"
+                    @mousedown.prevent="selectCustomerSuggestion(suggestion)">
+                  {{ suggestion.name }} <span v-if="suggestion.phone">({{ suggestion.phone }})</span>
+                </li>
+              </ul>
+            </div>
           </div>
         </div>
         <div class="col-md-4 mb-2">
