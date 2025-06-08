@@ -61,5 +61,14 @@ class UnpaidResource(Resource):
         db.session.commit()
         return {'result': True}, 200
 
-api.add_resource(UnpaidListResource, '/api/unpaid')
-api.add_resource(UnpaidResource, '/api/unpaid/<int:unpaid_id>')
+class UnpaidTotalResource(Resource):
+    def get(self, customer_id):
+        # Calculate sum(add) - sum(sub) for this customer
+        total = db.session.query(
+            func.coalesce(func.sum(Unpaid.add), 0) - func.coalesce(func.sum(Unpaid.sub), 0)
+        ).filter(Unpaid.customer_id == customer_id).scalar()
+        return {'customer_id': customer_id, 'unpaid_money': total or 0.0}, 200
+
+api.add_resource(UnpaidListResource, '/unpaid')
+api.add_resource(UnpaidResource, '/unpaid/<int:unpaid_id>')
+api.add_resource(UnpaidTotalResource, '/unpaid/customer/<int:customer_id>/total')

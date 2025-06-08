@@ -11,7 +11,9 @@ export default {
       items: [],
       customerSuggestions: [],  
       showCustomerSuggestions: false,
-      showProfit: false
+      showProfit: false,
+      unpaidList: [],
+      showUnpaidList: false
     };
   },
   computed: {
@@ -56,13 +58,13 @@ export default {
         if (el) el.focus();
       });
     },
-    saveUnpaid() { //Saves data related to customer
+    saveCustomerInfo() { //Saves data related to customer
       this.editingUnpaid = false;
       if (!this.customerId) return;
       fetch(`/api/customers/${this.customerId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ unpaid_money: this.customerUnpaid,
+        body: JSON.stringify({
           phone: this.customerMobile,
           name: this.customerName,
           type: this.billType === 'wholesale' ? 0 : 1 
@@ -244,7 +246,42 @@ export default {
   },
   hideCustomerSuggestions() {
     setTimeout(() => { this.showCustomerSuggestions = false; }, 200);
-  }
+  },
+  async saveUnpaid() {
+    let value = String(this.customerUnpaid).trim();
+    let payload = { customer_id: this.customerId };
+    if (value.startsWith('+')) {
+      payload.add = parseFloat(value.slice(1));
+    } else if (value.startsWith('-')) {
+      payload.sub = Math.abs(parseFloat(value));
+    } else {
+      // fallback: treat as add
+      payload.add = parseFloat(value);
+    }
+    // POST request
+    await fetch('/api/unpaid', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    // Optionally refresh unpaid list and value
+    this.fetchUnpaidList();
+    this.fetchCustomerUnpaid();
+    this.editingUnpaid = false;
+  },
+
+  async fetchUnpaidList() {
+    if (!this.customerId) return;
+    const res = await fetch(`/api/unpaid?customer_id=${this.customerId}`);
+    this.unpaidList = await res.json();
+  },
+
+  async fetchCustomerUnpaid() {
+    // Optionally, get the total from your API
+    const res = await fetch(`/api/unpaid/customer/${this.customerId}/total`);
+    const data = await res.json();
+    this.customerUnpaid = data.unpaid_money;
+  },
   },
   watch: {
     billType() {
@@ -258,7 +295,7 @@ export default {
             : matched.retail_price;
         }
       });
-      this.saveUnpaid();
+      this.saveCustomerInfo();
     },
     billId: {
     immediate: true,
@@ -294,23 +331,40 @@ export default {
                     @input="fetchCustomerSuggestions(customerName)"
                     @focus="fetchCustomerSuggestions(customerName)"
                     @blur="hideCustomerSuggestions"
-                    @keydown.enter="saveUnpaid"
+                    @keydown.enter="saveCustomerInfo"
                     autocomplete="off"
               />
-              <span v-if="customerUnpaid !== null" @click.stop="startEditUnpaid" class="badge bg-warning text-dark ms-2" style="cursor:pointer;">
+              <span v-if="customerUnpaid !== null"
+                    @mouseenter="showUnpaidList = true; fetchUnpaidList()"
+                    @mouseleave="showUnpaidList = false"
+                    @click.stop="startEditUnpaid"
+                    class="badge bg-warning text-dark ms-2 position-relative"
+                    style="cursor:pointer;">
                 <template v-if="!editingUnpaid">
                   Unpaid: ₹{{ customerUnpaid }}
                 </template>
                 <template v-else>
                   <input id="unpaidInput"
-                        type="number"
+                        type="text"
                         class="form-control form-control-sm d-inline-block"
                         style="width:80px;"
-                        v-model.number="customerUnpaid"
+                        v-model="customerUnpaid"
                         @keydown.enter="saveUnpaid"
                         @blur="editingUnpaid = false"
                   />
                 </template>
+                <!-- Mini list on hover -->
+                <div v-if="showUnpaidList" class="position-absolute border rounded shadow p-2" style="top:110%; left:0; min-width:200px; z-index:3000; max-height:200px; overflow:auto;">
+                  <div v-if="unpaidList.length === 0" class="text-muted small">No transactions</div>
+                  <ul v-else class="list-unstyled mb-0 small">
+                    <li v-for="u in unpaidList" :key="u.id">
+                      <span :style="{color: u.add ? '#198754' : '#dc3545'}">
+                        {{ u.add ? '+' + u.add : '-' + u.sub }}
+                      </span>
+                      <span class="text-muted ms-2">{{ new Date(u.date).toLocaleString() }}</span>
+                    </li>
+                  </ul>
+                </div>
               </span>
               <ul v-if="showCustomerSuggestions && customerSuggestions.length"
                   class="list-group position-absolute w-100"
@@ -327,7 +381,7 @@ export default {
         </div>
         <div class="col-md-3 ">
           <label class="form-label">Mobile Number</label>
-          <input v-model="customerMobile" class="form-control" placeholder="Enter mobile number" @keydown.enter="saveUnpaid"/>
+          <input v-model="customerMobile" class="form-control" placeholder="Enter mobile number" @keydown.enter="saveCustomerInfo"/>
         </div>
         <div class="col-md-2 d-flex align-items-end">
           <select v-model="billType" class="form-select w-auto">
