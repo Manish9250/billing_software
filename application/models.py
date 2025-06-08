@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
 from .database import db
 import pytz
+from sqlalchemy import func
 
 
 india = pytz.timezone('Asia/Kolkata')
@@ -15,6 +16,12 @@ class Customer(db.Model):
 
     def __repr__(self):
         return f'<Customer {self.name}>'
+    
+    def get_unpaid_money(self):
+        result = db.session.query(
+            func.coalesce(func.sum(Unpaid.add), 0) - func.coalesce(func.sum(Unpaid.sub), 0)
+        ).filter(Unpaid.customer_id == self.id).first()
+        return result[0] if result else 0.0
     
 class Item(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -64,7 +71,7 @@ class Bill(db.Model):
             "customer_name": self.customer.name if self.customer else None,
             "customer_phone": self.customer.phone if self.customer else None,
             "customer_type": self.customer.type if self.customer else None,
-            "unpaid_money": self.customer.unpaid_money if self.customer else None,
+            "unpaid_money": self.customer.get_unpaid_money() if self.customer else None,
             "no_of_items": self.no_of_items,
             "total_price": self.total_price,
             "date": self.date.isoformat() if self.date else None,
@@ -115,4 +122,25 @@ class CustomCustomerPrice(db.Model):
             "customer_id": self.customer_id,
             "item_id": self.item_id,
             "price": self.price
+        }
+    
+class Unpaid(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    customer_id = db.Column(db.Integer, db.ForeignKey('customer.id'), nullable=False)
+    add = db.Column(db.Float, nullable=True, default=0.0) 
+    sub = db.Column(db.Float, nullable=True, default=0.0) 
+    date = db.Column(db.DateTime, default=lambda: datetime.now())
+
+    customer = db.relationship('Customer', backref=db.backref('unpaid_money_records', lazy=True))
+
+    def __repr__(self):
+        return f'<Unpaid_Money {self.id}>'
+    
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "customer_id": self.customer_id,
+            "add": self.add,
+            "sub": self.sub,
+            "date": self.date.isoformat() if self.date else None
         }

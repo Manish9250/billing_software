@@ -21,7 +21,7 @@ class CustomerList(Resource): #For listing and creating customers
             "id": c.id,
             "name": c.name,
             "phone": c.phone,
-            "unpaid_money": c.unpaid_money,
+            "unpaid_money": c.get_unpaid_money(),
             "type": c.type
         } for c in customers], 200
 
