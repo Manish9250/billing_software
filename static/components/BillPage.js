@@ -117,6 +117,7 @@ export default {
             size: item.item_size,
             quantity: item.quantity,
             rate: item.price,
+            details: item || {}, //All info for tooltips
             suggestions: [],
             sizeSuggestions: [],
             matchedItems: []
@@ -192,6 +193,7 @@ export default {
           ? matched.wholesale_price
           : matched.retail_price;
           this.items[idx].itemId = matched.id;
+          this.$set(this.items[idx], 'details', matched); // Store full details for tooltips
       }
     },
     selectFirstItemSuggestion(idx) {
@@ -324,12 +326,11 @@ export default {
             <option value="wholesale">Wholesale</option>
           </select>
         </div>
-        <button class="btn btn-lg col-md-2 btn-primary d-flex align-items-center gap-2 shadow-sm ms-auto"  @click="addRow">
+        <button class="btn btn-lg col-md-2 btn-primary d-flex align-items-center gap-2 shadow-sm ms-auto"  @click="addRow" style="width: 150px;">
           <i class="bi bi-plus-circle" style="font-size:1.5rem;"></i>
           Add Item
         </button>
       </div>
-      <div class="table-responsive" ref="tableContainer" style="max-height: 380px; overflow-y: auto;">
       <table class="table table-bordered align-middle">
         <thead>
           <tr>
@@ -353,6 +354,7 @@ export default {
                      @focus="fetchItemSuggestions(idx, item.itemName)"
                      @keydown.enter.prevent="selectFirstItemSuggestion(idx)"
                      autocomplete="off"
+                     :title="item.details ? 'ID: ' + item.details.id + ', In Stock: ' + item.details.quantity + ', Buy Price: ' + item.details.buy_price : ''"
               />
               <ul v-if="item.suggestions && item.suggestions.length"
                   class="list-group position-absolute w-100"
@@ -409,7 +411,6 @@ export default {
           </tr>
         </tfoot>
       </table>
-      </div>
       
     </div>
   `
