@@ -10,7 +10,8 @@ export default {
       editingUnpaid: false,
       items: [],
       customerSuggestions: [],  
-      showCustomerSuggestions: false
+      showCustomerSuggestions: false,
+      showProfit: false
     };
   },
   computed: {
@@ -20,7 +21,15 @@ export default {
         const rate = parseFloat(item.rate) || 0;
         return sum + qty * rate;
       }, 0);
-    }
+    },
+    grandProfit() {
+    return this.items.reduce((sum, item) => {
+      if (item.details && item.details.buy_price !== undefined) {
+        return sum + ((item.rate - item.details.buy_price) * item.quantity);
+      }
+      return sum;
+    }, 0);
+  }
   },
   methods: {
     addRow() {
@@ -325,6 +334,7 @@ export default {
             <option value="retail">Retail</option>
             <option value="wholesale">Wholesale</option>
           </select>
+          
         </div>
         <button class="btn btn-lg col-md-2 btn-primary d-flex align-items-center gap-2 shadow-sm ms-auto"  @click="addRow" style="width: 150px;">
           <i class="bi bi-plus-circle" style="font-size:1.5rem;"></i>
@@ -340,7 +350,11 @@ export default {
             <th style="width: 100px;">Quantity</th>
             <th style="width: 120px;">Rate</th>
             <th style="width: 120px;">Amount</th>
-            <th style="width: 50px;"></th>
+            <th style="width: 50px;" >
+            <div class="form-check form-switch d-flex justify-content-center align-items-center mx-auto">
+              <input class="form-check-input" type="checkbox" id="profitSwitch" v-model="showProfit">
+            </div></th>
+            <th v-if="showProfit" style="min-width:60px;">Gain</th> <!-- Gain column -->
           </tr>
         </thead>
         <tbody>
@@ -397,17 +411,25 @@ export default {
                   @input="onAmountInput(idx, $event.target.value)"
                   @keydown.enter.prevent="onAmountEnter(idx)" />
           </td>
-            <td>
-              <button class="btn btn-sm btn-danger" @click="removeRow(idx)" v-if="items.length > 1">
-                <i class="bi bi-trash"></i>
-              </button>
-            </td>
+            <td class="text-center align-middle" style="vertical-align: middle;">
+  <button class="btn btn-sm btn-danger d-flex justify-content-center align-items-center mx-auto" @click="removeRow(idx)" v-if="items.length > 1" style="width:32px; height:32px;">
+    <i class="bi bi-trash"></i>
+  </button>
+</td>
+            <td v-if="showProfit" style="color:#198754; font-weight:bold; text-align:right;">
+        <span v-if="item.details && item.details.buy_price !== undefined">
+          +₹{{ ((item.rate - item.details.buy_price) * item.quantity).toFixed(2) }}
+        </span>
+      </td>
           </tr>
         </tbody>
         <tfoot>
           <tr>
             <td colspan="5" class="text-end fw-bold">Grand Total</td>
             <td colspan="2" class="fw-bold">₹{{ grandTotal.toFixed(2) }}</td>
+            <td v-if="showProfit" class="gain-col fw-bold" style="color:#198754;">
+      ₹{{ grandProfit.toFixed(2) }}
+    </td>
           </tr>
         </tfoot>
       </table>

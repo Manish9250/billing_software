@@ -1,1 +1,3 @@
-in this update data based on a get response from backend from /api/bills/:id, it will give id, customer_id, no_of_items, total_price and date.  After that to set customer name and mobile number make a get request on '/api/customers' with name as a query parameter and lastly get items info from 
+<button class="btn btn-outline-success btn-sm mb-2" @click="showProfit = !showProfit">
+  {{ showProfit ? 'Hide' : 'Show' }} Profits
+</button>
