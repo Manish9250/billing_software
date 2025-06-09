@@ -27,6 +27,7 @@ class Item(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(50), nullable=False)
     size = db.Column(db.String(50), nullable=False)
+    category = db.Column(db.String(50)) #Category of item.
     buy_price = db.Column(db.Float, nullable=False)
     quantity = db.Column(db.Float, nullable=False) # Quantity of item in stock.
     wholesale_price = db.Column(db.Float, nullable=False)
@@ -43,6 +44,7 @@ class Item(db.Model):
                 "id": self.id,
                 "name": self.name,
                 "size": self.size,
+                "category": self.category,
                 "quantity": self.quantity,
                 "buy_price": self.buy_price,
                 "wholesale_price": self.wholesale_price,
@@ -51,6 +53,13 @@ class Item(db.Model):
                 "buy_date": self.buy_date.isoformat() if self.buy_date else None,
                 "expiry_duration": self.expiry_duration 
                 }
+    
+    def recompute_quantity(self):
+        """Recompute and update this item's quantity from all purchases and sales."""
+        purchase_sum = db.session.query(func.coalesce(func.sum(Purchase.quantity), 0)).filter_by(item_id=self.id).scalar()
+        sold_sum = db.session.query(func.coalesce(func.sum(BillxItems.quantity), 0)).filter_by(item_id=self.id).scalar()
+        self.quantity = (purchase_sum or 0) - (sold_sum or 0)
+        db.session.commit()
     
 class Bill(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -142,5 +151,29 @@ class Unpaid(db.Model):
             "customer_id": self.customer_id,
             "add": self.add,
             "sub": self.sub,
+            "date": self.date.isoformat() if self.date else None
+        }
+    
+class Purchase(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    item_id = db.Column(db.Integer, db.ForeignKey('item.id'), nullable=False)
+    quantity = db.Column(db.Float, nullable=False)  # Inward quantity
+    buy_price = db.Column(db.Float, nullable=False)  # Buy price at that time
+    sell_price = db.Column(db.Float, nullable=True)  # Sell price at that time (optional)
+    date = db.Column(db.DateTime, default=lambda: datetime.now())
+
+    item = db.relationship('Item', backref=db.backref('purchases', lazy=True))
+
+    def __repr__(self):
+        return f'<Purchase {self.id} - Item {self.item_id}>'
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "item_id": self.item_id,
+            "item_name": self.item.name if self.item else None,
+            "quantity": self.quantity,
+            "buy_price": self.buy_price,
+            "sell_price": self.sell_price,
             "date": self.date.isoformat() if self.date else None
         }

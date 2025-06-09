@@ -11,6 +11,7 @@ parser = reqparse.RequestParser()
 
 parser.add_argument('name', type=str, required=False,location='json')
 parser.add_argument('size', type=str, required=False,location='json')
+parser.add_argument('category', type=str, required=False,location='json')
 parser.add_argument('buy_price', type=float, required=False,location='json') 
 parser.add_argument('quantity', type=float, required=False,location='json')
 parser.add_argument('wholesale_price', type=float, required=False,location='json')
@@ -44,6 +45,7 @@ class ItemResource(Resource):
                 item = Item(
                     name=args['name'],
                     size=args['size'],
+                    category=args.get('category', None),  # Optional field
                     quantity=args['quantity'],
                     buy_price=args["buy_price"],
                     wholesale_price=args["wholesale_price"],
@@ -72,6 +74,8 @@ class ItemResource(Resource):
                 item.name=args.get('name')
             if args.get("size") is not None:
                 item.size=args.get('size')
+            if args.get("category") is not None:
+                item.category=args.get('category')
             if args.get("quantity") is not None:
                 item.quantity=args.get('quantity')
             if args.get("buy_price") is not None:
