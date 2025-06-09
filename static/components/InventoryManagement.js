@@ -5,6 +5,7 @@ export default {
         {
           itemCode: '',
           itemName: '',
+          itemCategory: '',
           size: '',
           buyPrice: '',
           quantity: '',
@@ -18,6 +19,7 @@ export default {
       columns: [
         { label: 'Item code', key: 'itemCode', editable: false },
         { label: 'Item Name', key: 'itemName', editable: true },
+        { label: 'Item Category', key: 'itemCategory', editable: true },
         { label: 'Size', key: 'size', editable: true },
         { label: 'Buy Price', key: 'buyPrice', editable: true },
         { label: 'Quantity', key: 'quantity', editable: true },
@@ -123,6 +125,7 @@ export default {
       this.items.push({
         itemCode: '',
         itemName: '',
+        itemCategory: '',
         size: '',
         buyPrice: '',
         quantity: '',
@@ -142,6 +145,7 @@ export default {
       if (item.itemName && item.size) {
         const payload = {
           name: item.itemName,
+          category: item.itemCategory || '',
           size: item.size,
           buy_price: parseFloat(item.buyPrice) || 0,
           quantity: parseFloat(item.quantity) || 0,
@@ -168,6 +172,17 @@ export default {
           .then(data => {
             // Save the returned id to avoid duplicate POSTs
             if (data.id) this.items[rowIdx].itemCode = data.id;
+            // Creating Purchase entry
+            fetch('/api/purchase', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                item_id: data.id,
+                quantity: item.quantity,
+                buy_price: item.buyPrice,
+                sell_price: item.wholesalePrice
+              })
+            });
           })
           .catch(err => {
             // Handle error (show message, etc.)
@@ -187,6 +202,7 @@ export default {
         this.items = data.map(item => ({
           itemCode: item.id || '', // or item.itemCode if your backend uses that
           itemName: item.name || '',
+          itemCategory: item.category || '',
           size: item.size || '',
           buyPrice: item.buy_price || '',
           quantity: item.quantity || '',
@@ -201,6 +217,7 @@ export default {
           this.items.push({
             itemCode: '',
             itemName: '',
+            itemCategory: '',
             size: '',
             buyPrice: '',
             quantity: '',
@@ -212,7 +229,7 @@ export default {
         }
         // Start editing the first editable cell
         this.$nextTick(() => {
-          this.startEdit(this.items.length-1, 2);
+          this.startEdit(this.items.length-1, 1);
         });
       })
       .catch(err => {

@@ -26,6 +26,7 @@ class PurchaseListResource(Resource):
     def post(self):
         args = purchase_parser.parse_args()
         try:
+            
             purchase = Purchase(
                 item_id=args['item_id'],
                 quantity=args['quantity'],
