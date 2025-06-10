@@ -21,8 +21,10 @@ class Customer(db.Model):
         result = db.session.query(
             func.coalesce(func.sum(Unpaid.add), 0) - func.coalesce(func.sum(Unpaid.sub), 0)
         ).filter(Unpaid.customer_id == self.id).first()
-        return result[0] if result else 0.0
-    
+        amt = result[0] if result else 0.0
+        self.unpaid_money = amt  # Update the customer's unpaid money
+        return amt
+
 class Item(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(50), nullable=False)

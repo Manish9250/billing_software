@@ -51,6 +51,9 @@ export default {
       const rate = parseFloat(item.rate) || 0;
       return qty * rate;
     },
+    onCustomerInput() {
+    this.customerId = null;
+  },
     startEditUnpaid() {
       this.editingUnpaid = true;
       this.$nextTick(() => {
@@ -58,25 +61,52 @@ export default {
         if (el) el.focus();
       });
     },
-    saveCustomerInfo() { //Saves data related to customer
+    saveCustomerInfo() {
       this.editingUnpaid = false;
-      if (!this.customerId) return;
-      fetch(`/api/customers/${this.customerId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          phone: this.customerMobile,
-          name: this.customerName,
-          type: this.billType === 'wholesale' ? 0 : 1 
-         })
-      })
-      .then(res => {
-        if (!res.ok) throw new Error('Failed to update unpaid');
-        return res.json();
-      })
-      .catch(err => {
-        alert('Could not update unpaid: ' + err.message);
-      });
+      if (!this.customerName) return;
+
+      // If customerId exists, update customer
+      if (this.customerId) {
+        fetch(`/api/customers/${this.customerId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            phone: this.customerMobile,
+            name: this.customerName,
+            type: this.billType === 'wholesale' ? 0 : 1 
+          })
+        })
+        .then(res => {
+          if (!res.ok) throw new Error('Failed to update customer');
+          return res.json();
+        })
+        .catch(err => {
+          alert('Could not update customer: ' + err.message);
+        });
+      } else {
+        // Customer does not exist, create new
+        fetch('/api/customers', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            phone: this.customerMobile,
+            name: this.customerName,
+            type: this.billType === 'wholesale' ? 0 : 1,
+            unpaid_money: this.customerUnpaid || 0
+          })
+        })
+        .then(res => {
+          if (!res.ok) throw new Error('Failed to create customer');
+          return res.json();
+        })
+        .then(data => {
+          this.customerId = data.id;
+          // Optionally fetch unpaid info, etc.
+        })
+        .catch(err => {
+          alert('Could not create customer: ' + err.message);
+        });
+      }
     },
     onAmountEnter(idx) {
       const item = this.items[idx];
@@ -328,6 +358,7 @@ export default {
               <input v-model="customerName"
                     class="form-control"
                     placeholder="Enter customer name"
+                    @input="onCustomerInput"
                     @input="fetchCustomerSuggestions(customerName)"
                     @focus="fetchCustomerSuggestions(customerName)"
                     @blur="hideCustomerSuggestions"
