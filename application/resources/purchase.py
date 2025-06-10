@@ -35,9 +35,9 @@ class PurchaseListResource(Resource):
             )
             db.session.add(purchase)
             # Update item quantity
-            item = Item.query.get(args['item_id'])
-            if item:
-                item.quantity += args['quantity']
+            #item = Item.query.get(args['item_id'])
+            #if item:
+            #    item.quantity += args['quantity']
             db.session.commit()
             return purchase.to_dict(), 201
         except Exception as e:

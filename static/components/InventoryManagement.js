@@ -143,12 +143,20 @@ export default {
       const item = this.items[rowIdx];
       // Only send if required fields are filled
       if (item.itemName && item.size) {
+
+        // Detect if quantity input is "+N"
+        let qtyInput = String(item.quantity).trim();
+        let isAddition = qtyInput.startsWith('+');
+        let addQty = isAddition ? parseFloat(qtyInput.slice(1)) : null;
+
         const payload = {
           name: item.itemName,
           category: item.itemCategory || '',
           size: item.size,
           buy_price: parseFloat(item.buyPrice) || 0,
-          quantity: parseFloat(item.quantity) || 0,
+          quantity: isAddition
+          ? (parseFloat(item.prevQuantity) || 0) + (addQty || 0)
+          : parseFloat(item.quantity) || 0,
           wholesale_price: parseFloat(item.wholesalePrice) || 0,
           retail_price: parseFloat(item.retailPrice) || 0,
           alert_quantity: parseFloat(item.alertQuantity) || 0,
@@ -160,6 +168,24 @@ export default {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
+          }).then(() => {
+            // If +N, also POST to /api/purchase
+            if (isAddition && addQty > 0) {
+              fetch('/api/purchase', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  item_id: item.itemCode,
+                  quantity: addQty,
+                  buy_price: parseFloat(item.buyPrice) || 0,
+                  sell_price: parseFloat(item.wholesalePrice) || 0
+                })
+              });
+              // Update the displayed quantity
+              this.items[rowIdx].quantity = ((parseFloat(item.prevQuantity) || 0) + addQty).toString();
+            }
+            // Save the new quantity as prevQuantity for next edit
+            this.items[rowIdx].prevQuantity = this.items[rowIdx].quantity;
           });
         } else {
           // New item, use POST
@@ -183,6 +209,7 @@ export default {
                 sell_price: item.wholesalePrice
               })
             });
+            this.items[rowIdx].prevQuantity = payload.quantity.toString();
           })
           .catch(err => {
             // Handle error (show message, etc.)
@@ -206,6 +233,7 @@ export default {
           size: item.size || '',
           buyPrice: item.buy_price || '',
           quantity: item.quantity || '',
+          prevQuantity: item.quantity || '',
           wholesalePrice: item.wholesale_price || '',
           retailPrice: item.retail_price || '',
           alertQuantity: item.alert_quantity || '',
