@@ -22,7 +22,8 @@ const app = new Vue({
         openTabs: [
             { path: '/', name: 'Home' }
         ],
-        activeTab: '/'
+        activeTab: '/',
+        searchTerm: ''
     },
     watch: {
         '$route'(to) {
@@ -47,6 +48,9 @@ const app = new Vue({
                     if (nextTab) this.$router.push(nextTab.path);
                 }
             }
+        },
+        handleSearch(term) {
+          this.searchTerm = term;
         },
         addBillTab() {
           // Send POST request to create a new bill
@@ -103,9 +107,9 @@ const app = new Vue({
               <i class="bi bi-caret-down"></i>
             </div>
         </nav>
-        <search-bar @add-bill-tab="addBillTab"></search-bar>
+        <search-bar @add-bill-tab="addBillTab" @search="handleSearch"></search-bar>
         <div class="flex-grow-1 d-flex flex-column">
-      <router-view class="flex-grow-1 w-100"></router-view>
+      <router-view class="flex-grow-1 w-100" :search-term="searchTerm"></router-view>
     </div>
         <foot class="mt-auto"></foot>
       </div>

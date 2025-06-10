@@ -39,7 +39,7 @@ export default {
             </div>
             <!-- Center Search Bar -->
             <div class="mx-3 flex-grow-1" style="max-width: 400px;">
-                <input type="text" class="form-control" placeholder="Search..." />
+                <input type="text" class="form-control" placeholder="Search..." @input="$emit('search', $event.target.value)"/>
             </div>
             <!-- Right Side Buttons -->
             <div class="d-flex align-items-center flex-wrap justify-content-end">
