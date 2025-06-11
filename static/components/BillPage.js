@@ -45,6 +45,21 @@ export default {
       });
     },
     removeRow(idx) {
+      const item = this.items[idx];
+      // If the item has been saved to the backend, delete it there too
+      if (item.billxitem_id) {
+        fetch(`/api/billxitems/${item.billxitem_id}`, {
+          method: 'DELETE'
+        })
+        .then(res => {
+          if (!res.ok) throw new Error('Failed to delete item from bill');
+          // Optionally show a success message
+        })
+        .catch(err => {
+          this.errorMessage = 'Could not delete item: ' + err.message;
+        });
+      }
+      // Remove from UI
       if (this.items.length > 1) this.items.splice(idx, 1);
     },
     amount(item) {
@@ -128,7 +143,11 @@ export default {
         if (!res.ok) throw new Error('Failed to add item');
         return res.json();
       })
-      .then(() => {
+      .then(data => {
+        // Store the returned billxitem_id in the item
+        if (data.id) {
+          this.$set(this.items, idx, { ...item, billxitem_id: data.id });
+        }
         this.addRow();
         // Optionally, focus the new row's first input
         this.$nextTick(() => {
@@ -327,7 +346,7 @@ export default {
             : matched.retail_price;
         }
       });
-      this.saveCustomerInfo();
+
     },
     billId: {
     immediate: true,
