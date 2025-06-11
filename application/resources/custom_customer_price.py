@@ -64,4 +64,3 @@ class CustomPriceResource(Resource):
 
 api.add_resource(CustomPriceListResource, '/custom_prices')
 api.add_resource(CustomPriceResource, '/custom_prices/<int:customer_id>/<int:item_id>', '/custom_prices/<int:id>')
-# api.add_resource(CustomPriceResource, '/custom_prices/<int:id>') # For deleting by id

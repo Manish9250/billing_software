@@ -127,38 +127,142 @@ export default {
     },
     onAmountEnter(idx) {
       const item = this.items[idx];
-      // You may need to fetch item_id based on itemName/size, adjust as needed
       const payload = {
         bill_id: parseInt(this.billId),
-        item_id: item.itemId || null, // Make sure item_id is set in your items!
+        item_id: item.itemId || null,
         quantity: parseFloat(item.quantity) || 0,
         price: parseFloat(item.rate) || 0
       };
-      fetch('/api/billxitems', {
-        method: 'POST',
+
+      // 1. Detect if custom price is needed
+      let defaultPrice = null;
+      if (item.details) {
+        defaultPrice = this.billType === 'wholesale'
+          ? item.details.wholesale_price
+          : item.details.retail_price;
+      }
+      const isCustomPrice = (
+        item.itemId &&
+        this.customerId &&
+        defaultPrice !== null &&
+        parseFloat(item.rate) !== parseFloat(defaultPrice)
+      );
+
+      // 2. Create or update billxitem
+      const billxitemUrl = item.billxitem_id
+        ? `/api/billxitems/${item.billxitem_id}`
+        : '/api/billxitems';
+      const billxitemMethod = item.billxitem_id ? 'PUT' : 'POST';
+
+      fetch(billxitemUrl, {
+        method: billxitemMethod,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       })
-      .then(res => {
-        if (!res.ok) throw new Error('Failed to add item');
-        return res.json();
-      })
-      .then(data => {
-        // Store the returned billxitem_id in the item
-        if (data.id) {
-          this.$set(this.items, idx, { ...item, billxitem_id: data.id });
-        }
-        this.addRow();
-        // Optionally, focus the new row's first input
-        this.$nextTick(() => {
-          const newIdx = this.items.length - 1;
-          const el = this.$el.querySelector(`input[placeholder="Item Name"]:nth-of-type(${newIdx + 1})`);
-          if (el) el.focus();
+        .then(res => {
+          if (!res.ok) throw new Error('Failed to save item');
+          return res.json();
+        })
+        .then(data => {
+          // Store the returned billxitem_id in the item
+          if (data.id) {
+            this.$set(this.items, idx, { ...item, billxitem_id: data.id });
+          }
+
+          // 3. If custom price, save it to backend
+          if (isCustomPrice) {
+            if (item.custom_price_id) {
+              // Update existing custom price
+              fetch(`/api/custom_prices/${item.custom_price_id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  price: parseFloat(item.rate)
+                })
+              })
+                .then(res => {
+                  if (!res.ok) throw new Error('Failed to update custom price');
+                  return res.json();
+                })
+                .then(data => {
+                  if (data.id) {
+                    this.$set(this.items, idx, { ...item, custom_price_id: data.id });
+                  }
+                })
+                .catch(err => {
+                  this.errorMessage = 'Could not update custom price: ' + err.message;
+                });
+            } else {
+              // Create new custom price
+              fetch('/api/custom_prices', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  customer_id: this.customerId,
+                  item_id: item.itemId,
+                  price: parseFloat(item.rate)
+                })
+              })
+                .then(res => {
+                  if (!res.ok) throw new Error('Failed to save custom price');
+                  return res.json();
+                })
+                .then(data => {
+                  if (data.id) {
+                    this.$set(this.items, idx, { ...item, custom_price_id: data.id });
+                  }
+                })
+                .catch(err => {
+                  this.errorMessage = 'Could not save custom price: ' + err.message;
+                });
+            }
+          }
+
+          this.addRow();
+          this.$nextTick(() => {
+            const newIdx = this.items.length - 1;
+            const el = this.$el.querySelector(`input[placeholder="Item Name"]:nth-of-type(${newIdx + 1})`);
+            if (el) el.focus();
+          });
+        })
+        .catch(err => {
+          this.errorMessage = 'Could not save item: ' + err.message;
         });
-      })
-      .catch(err => {
-        this.errorMessage = 'Could not add item: ' + err.message;
-      });
+    },
+    async fetchAndApplyCustomPrice(idx) {
+      const item = this.items[idx];
+      if (!this.customerId || !item.itemId) return;
+
+      try {
+        const res = await fetch(`/api/custom_prices/${this.customerId}/${item.itemId}`);
+        if (res.ok) {
+          const data = await res.json();
+          // Update rate and store custom_price_id
+          this.$set(this.items, idx, {
+            ...item,
+            rate: data.price,
+            custom_price_id: data.id
+          });
+        } else {
+          // No custom price, clear custom_price_id and use default rate
+          this.$set(this.items, idx, {
+            ...item,
+            custom_price_id: null,
+            rate: this.billType === 'wholesale'
+              ? item.details?.wholesale_price
+              : item.details?.retail_price
+          });
+        }
+      } catch (e) {
+        // On error, fallback to default rate
+        this.$set(this.items, idx, {
+          ...item,
+          custom_price_id: null,
+          rate: this.billType === 'wholesale'
+            ? item.details?.wholesale_price
+            : item.details?.retail_price
+        });
+      }
     },
     fetchBillData() {
       // Fetch bill data from backend
@@ -256,7 +360,9 @@ export default {
           : matched.retail_price;
           this.items[idx].itemId = matched.id;
           this.$set(this.items[idx], 'details', matched); // Store full details for tooltips
-      }
+          // Fetch and apply custom price if available
+          this.fetchAndApplyCustomPrice(idx);     
+        }
     },
     selectFirstItemSuggestion(idx) {
         const suggestions = this.items[idx].suggestions;
@@ -294,6 +400,9 @@ export default {
     this.customerUnpaid = suggestion.unpaid_money || 0;
     this.billType = suggestion.type === 0 ? 'wholesale' : 'retail';
     this.showCustomerSuggestions = false;
+    // Fetch and apply custom price if available
+    this.fetchAndApplyCustomPrice(idx);
+    
   },
   hideCustomerSuggestions() {
     setTimeout(() => { this.showCustomerSuggestions = false; }, 200);
