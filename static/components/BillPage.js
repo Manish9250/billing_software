@@ -514,7 +514,7 @@ export default {
                   />
                 </template>
                 <!-- Mini list on hover -->
-                <div v-if="showUnpaidList" class="position-absolute border rounded shadow p-2" style="top:110%; left:0; min-width:200px; z-index:3000; max-height:200px; overflow:auto;">
+                <div v-if="showUnpaidList" class="position-absolute border bg-dark rounded shadow p-2" style="top:110%; left:0; min-width:200px; z-index:3000; max-height:200px; overflow:auto;">
                   <div v-if="unpaidList.length === 0" class="text-muted small">No transactions</div>
                   <ul v-else class="list-unstyled mb-0 small">
                     <li v-for="u in unpaidList" :key="u.id">
