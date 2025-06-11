@@ -13,6 +13,7 @@ export default {
       showCustomerSuggestions: false,
       showProfit: false,
       unpaidList: [],
+      errorMessage: '',
       showUnpaidList: false
     };
   },
@@ -53,6 +54,7 @@ export default {
     },
     onCustomerInput() {
     this.customerId = null;
+    this.fetchCustomerSuggestions(this.customerName);
   },
     startEditUnpaid() {
       this.editingUnpaid = true;
@@ -81,7 +83,7 @@ export default {
           return res.json();
         })
         .catch(err => {
-          alert('Could not update customer: ' + err.message);
+          this.errorMessage = 'Could not update customer: ' + err.message;
         });
       } else {
         // Customer does not exist, create new
@@ -104,7 +106,7 @@ export default {
           // Optionally fetch unpaid info, etc.
         })
         .catch(err => {
-          alert('Could not create customer: ' + err.message);
+          this.errorMessage = 'Could not create customer: ' + err.message;
         });
       }
     },
@@ -136,7 +138,7 @@ export default {
         });
       })
       .catch(err => {
-        alert('Could not add item: ' + err.message);
+        this.errorMessage = 'Could not add item: ' + err.message;
       });
     },
     fetchBillData() {
@@ -359,7 +361,6 @@ export default {
                     class="form-control"
                     placeholder="Enter customer name"
                     @input="onCustomerInput"
-                    @input="fetchCustomerSuggestions(customerName)"
                     @focus="fetchCustomerSuggestions(customerName)"
                     @blur="hideCustomerSuggestions"
                     @keydown.enter="saveCustomerInfo"
