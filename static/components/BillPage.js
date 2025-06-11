@@ -67,6 +67,29 @@ export default {
       const rate = parseFloat(item.rate) || 0;
       return qty * rate;
     },
+    async finalizeBill(print = false) {
+      try {
+        // Save/finalize the bill (update totals, subtract stock, etc.)
+        const res = await fetch(`/api/bills/${this.billId}/finalize`, {
+          method: 'POST'
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || 'Failed to save bill');
+        if (print) {
+          // Call backend print endpoint
+          const printRes = await fetch(`/api/bills/${this.billId}/print`, {
+            method: 'POST'
+          });
+          const printData = await printRes.json();
+          if (!printRes.ok) throw new Error(printData.message || 'Failed to print bill');
+          alert('Bill saved and sent to printer!');
+        } else {
+          alert('Bill saved successfully!');
+        }
+      } catch (err) {
+        this.errorMessage = err.message;
+      }
+    },
     onCustomerInput() {
     this.customerId = null;
     this.fetchCustomerSuggestions(this.customerName);
@@ -639,7 +662,14 @@ export default {
         </tbody>
         <tfoot>
           <tr>
-            <td colspan="5" class="text-end fw-bold">Grand Total</td>
+            <td colspan="5" class="text-end fw-bold">
+            <button class="btn btn-success me-2" @click="finalizeBill(false)">
+              Save Bill
+            </button>
+            <button class="btn btn-primary me-2" @click="finalizeBill(true)">
+              Save & Print
+            </button>
+            Grand Total</td>
             <td colspan="2" class="fw-bold">₹{{ grandTotal.toFixed(2) }}</td>
             <td v-if="showProfit" class="gain-col fw-bold" style="color:#198754;">
       ₹{{ grandProfit.toFixed(2) }}
