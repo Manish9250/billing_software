@@ -90,17 +90,35 @@ class BillPrintResource(Resource):
         # Fetch bill items
         bill_items = BillxItems.query.filter_by(bill_id=bill_id).all()
         lines = []
-        lines.append(f"Bill #{bill.id} - Customer: {bill.customer.name}")
-        lines.append("====================================")
+        # Shop name centered
+        shop_name = "Laxmi Wholesale Store"
+        lines.append(shop_name.center(48))
+        lines.append("=" * 48)
+        # Bill and customer info
+        lines.append(f"Bill #{bill.id}  Customer: {bill.customer.name}")
+        lines.append("-" * 48)
+        # Header
+        lines.append(f"{'Item':25} {'Qty':>3} {'Rate':>7} {'Amt':>10}")
+        lines.append("-" * 48)
         total = 0
         for bxi in bill_items:
             item = Item.query.get(bxi.item_id)
-            line = f"{item.name} x {bxi.quantity} @ {bxi.price} = {bxi.quantity * bxi.price}"
+            # Item name: 25 chars, Qty: 3, Rate: 7, Amt: 10
+            item_name = item.name + " " + item.size
+            name = (item_name[:25]) if len(item_name) > 25 else item_name.ljust(25)
+            qty = f"{bxi.quantity:>4}"
+            price = f"{bxi.price:>9.2f}"
+            amount = f"{bxi.quantity * bxi.price:>10.2f}"
+            line = f"{name}{qty}{price}{amount}"
             lines.append(line)
             total += bxi.quantity * bxi.price
-        lines.append("====================================")
-        lines.append(f"Total: {total}")
+        lines.append("-" * 48)
+        # Total right-aligned
+        total_str = f"Total: {total:.2f}"
+        lines.append(total_str.rjust(48))
+        lines.append("=" * 48)
         bill_text = "\n".join(lines)
+
 
 
         try:
