@@ -90,7 +90,7 @@ class BillPrintResource(Resource):
         # Fetch bill items
         bill_items = BillxItems.query.filter_by(bill_id=bill_id).all()
         lines = []
-        lines.append(f"Bill #{bill.id} - Customer: {bill.customer_id}")
+        lines.append(f"Bill #{bill.id} - Customer: {bill.customer.name}")
         lines.append("====================================")
         total = 0
         for bxi in bill_items:
@@ -102,17 +102,17 @@ class BillPrintResource(Resource):
         lines.append(f"Total: {total}")
         bill_text = "\n".join(lines)
 
-        # Write to a temporary file
-        temp_path = f"/tmp/bill_{bill.id}.txt"
-        with open(temp_path, "w") as f:
-            f.write(bill_text)
 
-        # Print using lpr (Linux)
         try:
-            os.system(f"lpr {temp_path}")
+            from escpos.printer import Usb
+            p = Usb(0x04b8, 0x0e11)
+            p.set(align='left', font='a', width=1, height=1)
+            p.text(bill_text + "\n")
+            p.cut()
             return {"message": "Bill sent to printer"}, 200
         except Exception as e:
-            return {"message": f"Print failed: {str(e)}"}, 500
+            # Handle resource busy, USB errors, etc.
+            return {"message": f"Printer error: {str(e)}"}, 500
 
 
 api.add_resource(BillListResource, '/bills')
