@@ -68,6 +68,9 @@ class BillFinalizeResource(Resource):
 
         # Update number of items and total price
         bill_items = BillxItems.query.filter_by(bill_id=bill_id).all()
+
+        data = request.get_json()
+        bill.customer_id = data.get("customer_id")  # Ensure customer_id is set
         bill.no_of_items = len(bill_items)
         bill.total_price = sum([item.price * item.quantity for item in bill_items])
 

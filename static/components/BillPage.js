@@ -71,7 +71,11 @@ export default {
       try {
         // Save/finalize the bill (update totals, subtract stock, etc.)
         const res = await fetch(`/api/bills/${this.billId}/finalize`, {
-          method: 'POST'
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            customer_id: this.customerId
+          })
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.message || 'Failed to save bill');
@@ -424,7 +428,9 @@ export default {
     this.billType = suggestion.type === 0 ? 'wholesale' : 'retail';
     this.showCustomerSuggestions = false;
     // Fetch and apply custom price if available
-    this.fetchAndApplyCustomPrice(idx);
+    this.items.forEach((item, idx) => {
+      this.fetchAndApplyCustomPrice(idx);
+    });
     
   },
   hideCustomerSuggestions() {
