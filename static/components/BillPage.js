@@ -418,7 +418,9 @@ export default {
       .catch(() => {
         this.customerSuggestions = [];
         this.showCustomerSuggestions = false;
-      });  selectCustomerSuggestion(suggestion) {
+      });
+  },
+  selectCustomerSuggestion(suggestion) {
     this.customerId = suggestion.id;
     this.customerName = suggestion.name;
     this.customerMobile = suggestion.phone || '';
