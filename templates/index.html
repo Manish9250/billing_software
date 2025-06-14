@@ -20,6 +20,13 @@
         overflow-y: auto;
       
       }
+      /* Make table header sticky */
+      .table thead th {
+        position: sticky;
+        top: 0;
+        
+        z-index: 2;
+      }
       router-view {
   overflow-y: auto;
   min-height: 0;
