@@ -2,6 +2,9 @@ from flask import request, Blueprint
 from flask_restful import Resource, Api
 from application.models import db, Bill, Item, BillxItems
 import os
+from  datetime import datetime
+import pytz
+india = pytz.timezone('Asia/Kolkata')
 
 bill_bp = Blueprint("bill_api", "__name__")
 api = Api(bill_bp)
@@ -98,7 +101,13 @@ class BillPrintResource(Resource):
         lines.append(shop_name.center(48))
         lines.append("=" * 48)
         # Bill and customer info
-        lines.append(f"Bill #{bill.id}  Customer: {bill.customer.name}")
+        bill_id_str = str(bill.id).ljust(10)
+        name = bill.customer.name if bill.customer else "Unknown Customer"        
+        display_name = (name[:17] + '...') if len(name) > 20 else name
+        display_name = display_name.ljust(20)
+        date_time = datetime.now(india).strftime("%d-%m-%Y %I:%M %p")
+        lines.append(f"Bill #{bill_id_str}  Customer: {display_name}")
+        lines.append(f"Date: {date_time}")
         lines.append("-" * 48)
         # Header
         lines.append(f"{'Item':25} {'Qty':>3} {'Rate':>7} {'Amt':>10}")
@@ -133,6 +142,7 @@ class BillPrintResource(Resource):
             return {"message": "Bill sent to printer"}, 200
         except Exception as e:
             # Handle resource busy, USB errors, etc.
+            print("Error:", str(e))
             return {"message": f"Printer error: {str(e)}"}, 500
 
 
