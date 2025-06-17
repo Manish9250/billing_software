@@ -152,7 +152,7 @@ export default {
       const origIdx = this.getOriginalIndex(filteredRowIdx);
       const item = this.items[origIdx];
       // Only send if required fields are filled
-      if (item.itemName && item.size) {
+      if (item.itemName && item.size && item.buyPrice && item.quantity && item.wholesalePrice && item.retailPrice) {
         // Detect if quantity input is "+N"
         let qtyInput = String(item.quantity).trim();
         let isAddition = qtyInput.startsWith('+');
