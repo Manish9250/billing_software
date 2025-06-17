@@ -69,7 +69,40 @@ export default {
     },
     async finalizeBill(print = false) {
       try {
-        // Save/finalize the bill (update totals, subtract stock, etc.)
+        // 1. Save or update all items in the bill
+        for (let idx = 0; idx < this.items.length; idx++) {
+          const item = this.items[idx];
+          // Only save if itemId and quantity > 0
+          if (item.itemId && item.quantity > 0) {
+            const payload = {
+              bill_id: parseInt(this.billId),
+              item_id: item.itemId,
+              quantity: parseFloat(item.quantity) || 0,
+              price: parseFloat(item.rate) || 0
+            };
+            let url, method;
+            if (item.billxitem_id) {
+              url = `/api/billxitems/${item.billxitem_id}`;
+              method = 'PUT';
+            } else {
+              url = '/api/billxitems';
+              method = 'POST';
+            }
+            const res = await fetch(url, {
+              method,
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.message || 'Failed to save item');
+            // Store the returned billxitem_id if new
+            if (data.id) {
+              this.$set(this.items, idx, { ...item, billxitem_id: data.id });
+            }
+          }
+        }
+
+        // 2. Finalize the bill
         const res = await fetch(`/api/bills/${this.billId}/finalize`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -80,10 +113,8 @@ export default {
         const data = await res.json();
         if (!res.ok) throw new Error(data.message || 'Failed to save bill');
         if (print) {
-          // Call backend print endpoint
-          const printRes = await fetch(`/api/bills/${this.billId}/print`, {
-            method: 'POST'
-          });
+          // Print logic
+          const printRes = await fetch(`/api/bills/${this.billId}/print`, { method: 'POST' });
           const printData = await printRes.json();
           if (!printRes.ok) throw new Error(printData.message || 'Failed to print bill');
           alert('Bill saved and sent to printer!');
