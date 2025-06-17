@@ -307,7 +307,9 @@ export default {
                           const origIdx = this.getOriginalIndex(rowIdx);
                           this.items[origIdx][col.key] = e.target.value;
                         },
-                        blur: () => { this.editing = {}; },
+                        blur: () => { 
+                          this.saveRow(rowIdx);
+                          this.editing = {}; },
                         keydown: e => this.handleKeyDown(e, rowIdx, colIdx)
                       },
                       style: { width: '100%' }
