@@ -67,6 +67,44 @@ export default {
       const rate = parseFloat(item.rate) || 0;
       return qty * rate;
     },
+    async createNewItem(idx) {
+      const item = this.items[idx];
+      if (!item.itemName || !item.size) return;
+      if (item.itemId) return;
+
+      // Use the entered rate for the correct price field
+      const payload = {
+        name: item.itemName,
+        size: item.size,
+        category: '', // or any default
+        buy_price: 0,
+        quantity: 0,
+        wholesale_price: this.billType === 'wholesale' ? (item.rate || 0) : 0,
+        retail_price: this.billType === 'retail' ? (item.rate || 0) : 0,
+        alert_quantity: 0,
+        expiry_duration: 0
+      };
+
+      try {
+        const res = await fetch('/api/items', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (res.ok && data.id) {
+          this.$set(this.items, idx, {
+            ...item,
+            itemId: data.id,
+            details: data
+          });
+        } else {
+          this.errorMessage = data.message || 'Failed to create item';
+        }
+      } catch (err) {
+        this.errorMessage = 'Failed to create item: ' + err.message;
+      }
+    },
     async finalizeBill(print = false) {
       try {
         // 1. Save or update all items in the bill
@@ -185,6 +223,10 @@ export default {
     },
     onAmountEnter(idx) {
       const item = this.items[idx];
+      if (!item.itemId){
+        this.createNewItem(idx);
+        return;
+      };
       const payload = {
         bill_id: parseInt(this.billId),
         item_id: item.itemId || null,
@@ -420,6 +462,11 @@ export default {
           this.$set(this.items[idx], 'details', matched); // Store full details for tooltips
           // Fetch and apply custom price if available
           this.fetchAndApplyCustomPrice(idx);     
+        }
+        else {
+          // No match found, create new item
+          this.createNewItem(idx);
+
         }
     },
     selectFirstItemSuggestion(idx) {
