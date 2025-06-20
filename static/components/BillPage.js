@@ -378,6 +378,7 @@ export default {
           this.billType = bill.customer_type === 0 ? 'wholesale' : 'retail';
           // Set items
           this.items = (bill.items || []).map(item => ({
+            billxitem_id: item.id,
             itemId: item.item_id,
             itemName: item.item_name,
             size: item.item_size,
