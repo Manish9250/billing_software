@@ -1,5 +1,6 @@
 #Virtual Enviroment
 .venv
+venv
 
 #pythons extra files
 __pycache__/
