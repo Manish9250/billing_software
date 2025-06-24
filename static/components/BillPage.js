@@ -43,7 +43,6 @@ export default {
           container.scrollTop = container.scrollHeight;
         }
       });
-      this.$root.$refs.notification.show('Row added', 'succcess');
 
     },
     removeRow(idx) {
@@ -56,9 +55,11 @@ export default {
         .then(res => {
           if (!res.ok) throw new Error('Failed to delete item from bill');
           // Optionally show a success message
+          this.$root.notify('Item deleted successfully!', 'success');
         })
         .catch(err => {
           this.errorMessage = 'Could not delete item: ' + err.message;
+          this.$root.notify(this.errorMessage, 'error');
         });
       }
       // Remove from UI
@@ -100,11 +101,14 @@ export default {
             itemId: data.id,
             details: data
           });
+          this.$root.notify('Item created successfully!', 'success');
         } else {
           this.errorMessage = data.message || 'Failed to create item';
+          this.$root.notify(this.errorMessage, 'error');
         }
       } catch (err) {
         this.errorMessage = 'Failed to create item: ' + err.message;
+        this.$root.notify(this.errorMessage, 'error');
       }
     },
     async finalizeBill(print = false) {
@@ -134,10 +138,16 @@ export default {
               body: JSON.stringify(payload)
             });
             const data = await res.json();
-            if (!res.ok) throw new Error(data.message || 'Failed to save item');
+            if (!res.ok) {
+              this.errorMessage = data.message || 'Failed to save item';
+              this.$root.notify(this.errorMessage, 'error');
+              throw new Error(data.message || 'Failed to save item');
+
+            }
             // Store the returned billxitem_id if new
             if (data.id) {
               this.$set(this.items, idx, { ...item, billxitem_id: data.id });
+              this.$root.notify('Item created successfully!', 'success');
             }
           }
         }
@@ -151,18 +161,26 @@ export default {
           })
         });
         const data = await res.json();
-        if (!res.ok) throw new Error(data.message || 'Failed to save bill');
+        if (!res.ok) {
+          this.errorMessage = data.message || 'Failed to save bill';
+          this.$root.notify(this.errorMessage, 'error');
+          throw new Error(this.errorMessage);
+        }
         if (print) {
           // Print logic
           const printRes = await fetch(`/api/bills/${this.billId}/print`, { method: 'POST' });
           const printData = await printRes.json();
-          if (!printRes.ok) throw new Error(printData.message || 'Failed to print bill');
-          alert('Bill saved and sent to printer!');
+          if (!printRes.ok) {
+            this.errorMessage = printData.message || 'Failed to print bill';
+            throw new Error(this.errorMessage);
+          }
+          this.$root.notify('Bill saved and sent to printer!', 'success');
         } else {
-          alert('Bill saved successfully!');
+          this.$root.notify('Bill saved successfully!', 'success');
         }
       } catch (err) {
         this.errorMessage = err.message;
+        this.$root.notify(this.errorMessage, 'error');
       }
     },
     onCustomerInput() {
@@ -192,11 +210,19 @@ export default {
           })
         })
         .then(res => {
-          if (!res.ok) throw new Error('Failed to update customer');
+
+          if (!res.ok) {
+            this.errorMessage = 'Failed to update customer';
+            this.$root.notify(this.errorMessage, 'error');
+            throw new Error(this.errorMessage);
+          }
+          this.$root.notify('Customer updated successfully!', 'success');
           return res.json();
+
         })
         .catch(err => {
           this.errorMessage = 'Could not update customer: ' + err.message;
+          this.$root.notify(this.errorMessage, 'error');
         });
       } else {
         // Customer does not exist, create new
@@ -211,15 +237,23 @@ export default {
           })
         })
         .then(res => {
-          if (!res.ok) throw new Error('Failed to create customer');
+          if (!res.ok) {
+            this.errorMessage = 'Failed to create customer';
+            this.$root.notify(this.errorMessage, 'error');
+            throw new Error(this.errorMessage);
+          }
+
           return res.json();
         })
         .then(data => {
           this.customerId = data.id;
+          this.$root.notify('Customer created successfully!', 'success');
+          this.$root.notify('Customer ID: ' + this.customerId, 'success');
           // Optionally fetch unpaid info, etc.
         })
         .catch(err => {
           this.errorMessage = 'Could not create customer: ' + err.message;
+          this.$root.notify(this.errorMessage, 'error');
         });
       }
     },
@@ -262,13 +296,18 @@ export default {
         body: JSON.stringify(payload)
       })
         .then(res => {
-          if (!res.ok) throw new Error('Failed to save item');
+          if (!res.ok) {
+            this.errorMessage = 'Failed to save item';
+            this.$root.notify(this.errorMessage, 'error');
+            throw new Error(this.errorMessage);
+          }
           return res.json();
         })
         .then(data => {
           // Store the returned billxitem_id in the item
           if (data.id) {
             this.$set(this.items, idx, { ...item, billxitem_id: data.id });
+            this.$root.notify(`${item.itemName} ${item.size} saved successfully!`, 'success');
           }
 
           // 3. If custom price, save it to backend
@@ -283,7 +322,12 @@ export default {
                 })
               })
                 .then(res => {
-                  if (!res.ok) throw new Error('Failed to update custom price');
+                  if (!res.ok) {
+                    this.errorMessage = 'Failed to update custom price';
+                    this.$root.notify(this.errorMessage, 'error');
+                    throw new Error(this.errorMessage);
+                  }
+                  this.$root.notify('Custom price updated successfully!', 'success');
                   return res.json();
                 })
                 .then(data => {
@@ -293,6 +337,7 @@ export default {
                 })
                 .catch(err => {
                   this.errorMessage = 'Could not update custom price: ' + err.message;
+                  this.$root.notify(this.errorMessage, 'error');
                 });
             } else {
               // Create new custom price
@@ -306,16 +351,23 @@ export default {
                 })
               })
                 .then(res => {
-                  if (!res.ok) throw new Error('Failed to save custom price');
+                  if (!res.ok) {
+                    this.errorMessage = 'Failed to save custom price';
+                    this.$root.notify(this.errorMessage, 'error');
+                    throw new Error(this.errorMessage);
+                  }
+                  
                   return res.json();
                 })
                 .then(data => {
                   if (data.id) {
                     this.$set(this.items, idx, { ...item, custom_price_id: data.id });
+                    this.$root.notify('Custom price saved successfully!', 'success');
                   }
                 })
                 .catch(err => {
                   this.errorMessage = 'Could not save custom price: ' + err.message;
+                  this.$root.notify(this.errorMessage, 'error');
                 });
             }
           }
@@ -345,6 +397,7 @@ export default {
             rate: data.price,
             custom_price_id: data.id
           });
+          this.$root.notify('Custom price applied successfully!', 'success');
         } else {
           // No custom price, clear custom_price_id and use default rate
           this.$set(this.items, idx, {
@@ -364,6 +417,7 @@ export default {
             ? item.details?.wholesale_price
             : item.details?.retail_price
         });
+        this.$root.notify('Could not fetch custom price, using default rate.', 'warning');
       }
     },
     fetchBillData() {
@@ -391,6 +445,7 @@ export default {
             sizeSuggestions: [],
             matchedItems: []
           }));
+
           // If no items, add a blank row
           if (this.items.length === 0) {
             this.addRow();
@@ -495,6 +550,7 @@ export default {
       .then(data => {
         this.customerSuggestions = data;
         this.showCustomerSuggestions = true;
+
       })
       .catch(() => {
         this.customerSuggestions = [];
@@ -533,17 +589,32 @@ export default {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
+    })
+    .then(res => {
+      if (!res.ok) {
+        this.errorMessage = 'Failed to save unpaid amount';
+        this.$root.notify(this.errorMessage, 'error');
+      } else {
+        this.$root.notify('Unpaid amount saved successfully!', 'success');
+      }
+      // Optionally refresh unpaid list and value
+      this.fetchUnpaidList();
+      this.fetchCustomerUnpaid();
+      this.editingUnpaid = false;
     });
-    // Optionally refresh unpaid list and value
-    this.fetchUnpaidList();
-    this.fetchCustomerUnpaid();
-    this.editingUnpaid = false;
+
   },
 
   async fetchUnpaidList() {
     if (!this.customerId) return;
     const res = await fetch(`/api/unpaid?customer_id=${this.customerId}`);
     this.unpaidList = await res.json();
+    if (this.unpaidList.length === 0) {
+      this.$root.notify('No unpaid transactions found for this customer.', 'info');
+    }
+    else {
+      this.$root.notify('Unpaid transactions loaded successfully!', 'success');
+    }
   },
 
   async fetchCustomerUnpaid() {
@@ -551,6 +622,11 @@ export default {
     const res = await fetch(`/api/unpaid/customer/${this.customerId}/total`);
     const data = await res.json();
     this.customerUnpaid = data.unpaid_money;
+    if (data.unpaid_money !== undefined) {
+      this.$root.notify('Customer unpaid amount updated successfully!', 'success');
+    } else {
+      this.$root.notify('Could not fetch customer unpaid amount.', 'error');
+    }
   },
   },
   watch: {

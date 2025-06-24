@@ -5,7 +5,7 @@ export default {
     };
   },
   methods: {
-    show(message, type = 'success', timeout = 3000) {
+    show(message, type = 'success', timeout = 5000) {
       const id = Date.now() + Math.random();
       this.notifications.push({ id, message, type });
       // Play sound
