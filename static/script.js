@@ -1,5 +1,5 @@
 // Remove import statements if using CDN
-
+import Notification from "./components/Notification.js";
 import BillPage from "./components/BillPage.js"
 import InventoryManagement from "./components/InventoryManagement.js"
 import SearchBar from "./components/SearchBar.js"
@@ -37,7 +37,14 @@ const app = new Vue({
             }
         }
     },
+    mounted() {
+      // Make notification globally accessible
+      this.$notify = this.$refs.notification && this.$refs.notification.show;
+    },
     methods: {
+      notify(message, type = 'success') {
+        this.$refs.notification.show(message, type);
+      },
         closeTab(tabPath) {
             const idx = this.openTabs.findIndex(tab => tab.path === tabPath);
             if (idx !== -1) {
@@ -112,11 +119,14 @@ const app = new Vue({
       <router-view class="flex-grow-1 w-100" :search-term="searchTerm"></router-view>
     </div>
         <foot class="mt-auto"></foot>
-      </div>
+        <notification ref="notification"></notification>
+    </div>
     `,
     components: {
         'foot': Foot,
-        'search-bar': SearchBar
+        'search-bar': SearchBar,
+        'notification': Notification
+
     }
 });
 

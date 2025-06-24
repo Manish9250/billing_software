@@ -43,6 +43,8 @@ export default {
           container.scrollTop = container.scrollHeight;
         }
       });
+      this.$root.$refs.notification.show('Row added', 'succcess');
+
     },
     removeRow(idx) {
       const item = this.items[idx];
