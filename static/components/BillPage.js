@@ -259,6 +259,19 @@ export default {
     },
     onAmountEnter(idx) {
       const item = this.items[idx];
+
+      
+      const duplicateIdx = this.items.findIndex(
+      (it, i) =>
+        i !== idx && // <-- excludes the current row
+        it.itemId === item.itemId &&
+        it.size === item.size
+    );
+    if (duplicateIdx !== -1) {
+      this.$root.notify('This item and size is already in the bill.', 'error');
+      return;
+    }
+      
       if (!item.itemId){
         this.createNewItem(idx);
         return;
@@ -307,9 +320,12 @@ export default {
           // Store the returned billxitem_id in the item
           if (data.id) {
             this.$set(this.items, idx, { ...item, billxitem_id: data.id });
-            this.$root.notify(`${item.itemName} ${item.size} saved successfully!`, 'success');
           }
-
+          const updatedItem = this.items[idx];
+          this.$root.notify(
+            `Item ${updatedItem.itemName} ${updatedItem.size} ${data.id ? 'saved' : 'modified'} successfully!`,
+            'success'
+          );
           // 3. If custom price, save it to backend
           if (isCustomPrice) {
             if (item.custom_price_id) {
