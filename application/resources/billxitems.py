@@ -42,6 +42,15 @@ class BillxItemsResource(Resource):
         if not bill or not item:
             return {'message': 'Bill or Item not found'}, 404
         
+        # Check for duplicate (assuming you have a 'size' field, add it if needed)
+        existing = BillxItems.query.filter_by(
+            bill_id=args['bill_id'],
+            item_id=args['item_id']
+            # size=args.get('size')  # Uncomment if you have a size field
+        ).first()
+        if existing:
+            return {'message': 'Duplicate item for this bill already exists', 'id': existing.id}, 409
+
         try: 
             billxitem = BillxItems(
                 bill_id=args['bill_id'],
