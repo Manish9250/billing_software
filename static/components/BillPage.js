@@ -147,7 +147,7 @@ export default {
               );
               //this.items.splice(idx, 1);
               //idx--; // Adjust index after removal
-              //continue; // Skip to next item
+              continue; // Skip to next item
             }
 
             if (!res.ok) {
