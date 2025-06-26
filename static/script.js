@@ -3,6 +3,8 @@ import Notification from "./components/Notification.js";
 import BillPage from "./components/BillPage.js"
 import InventoryManagement from "./components/InventoryManagement.js"
 import SearchBar from "./components/SearchBar.js"
+import StatisticsPage from './components/StatisticsPage.js';
+
 
 const Home = { template: '<div>Home</div>' }
 const Foot = { template: '<div class="text-center">Welcome to Laxmi Store</div>' }
@@ -10,7 +12,8 @@ const Foot = { template: '<div class="text-center">Welcome to Laxmi Store</div>'
 const routes = [
     { path: '/', component: Home, name: 'Home' },
     { path: '/inventoryManagement', component: InventoryManagement, name: 'Inventory Management' },
-    { path: '/bill/:billId', component: BillPage, name: 'Bill', props: true }
+    { path: '/bill/:billId', component: BillPage, name: 'Bill', props: true },
+    { path: '/statistics', component: StatisticsPage, name: 'Statistics' },
 ];
 
 const router = new VueRouter({ routes });
