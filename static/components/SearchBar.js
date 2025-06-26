@@ -18,7 +18,11 @@ export default {
                         <!-- Receipt/Bill SVG -->
                         <i class="bi bi-receipt"></i>
                     </span>
-                    New Bill
+                    Retail Bill
+                </button>
+                <button class="btn btn-outline-primary mx-1 d-flex align-items-center" @click="addWholesaleBillTab">
+                    <span class="me-1"><i class="bi bi-cash-stack"></i></span>
+                    Wholesale Bill
                 </button>
                 <button class="btn btn-outline-primary mx-1 d-flex align-items-center">
                     <router-link to="/inventoryManagement" class="text-decoration-none text-reset d-flex align-items-center">
@@ -64,6 +68,9 @@ export default {
     methods: {
         addBillTab() {
             this.$emit('add-bill-tab');
+        },
+        addWholesaleBillTab() {
+            this.$emit('add-wholesale-bill-tab');
         }
     }
 }

@@ -104,25 +104,25 @@ class Bill(db.Model):
     
 class BillxItems(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    bill_id = db.Column(db.Integer, db.ForeignKey('bill.id'), nullable=False)
-    item_id = db.Column(db.Integer, db.ForeignKey('item.id'), nullable=False)
+    bill_id = db.Column(db.Integer, db.ForeignKey('bill.id', ondelete="CASCADE"), nullable=False)
+    item_id = db.Column(db.Integer, db.ForeignKey('item.id', ondelete="CASCADE"), nullable=False)
     quantity = db.Column(db.Integer, nullable=False)
     price = db.Column(db.Float, nullable=False) #Price of item in bill at that time.
 
-    bill = db.relationship('Bill', backref=db.backref('bill_x_items', lazy=True))
-    item = db.relationship('Item', backref=db.backref('bill_x_items', lazy=True))
+    bill = db.relationship('Bill', backref=db.backref('bill_x_items', lazy=True, passive_deletes=True))
+    item = db.relationship('Item', backref=db.backref('bill_x_items', lazy=True, passive_deletes=True))
 
     def __repr__(self):
         return f'<Bill_x_Items {self.id}>'
     
 class CustomCustomerPrice(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    customer_id = db.Column(db.Integer, db.ForeignKey('customer.id'), nullable=False)
-    item_id = db.Column(db.Integer, db.ForeignKey('item.id'), nullable=False)
+    customer_id = db.Column(db.Integer, db.ForeignKey('customer.id', ondelete="CASCADE"), nullable=False)
+    item_id = db.Column(db.Integer, db.ForeignKey('item.id', ondelete="CASCADE"), nullable=False)
     price = db.Column(db.Float, nullable=False) #Custom price of item for customer.
 
-    customer = db.relationship('Customer', backref=db.backref('custom_customer_price', lazy=True))
-    item = db.relationship('Item', backref=db.backref('custom_customer_price', lazy=True))
+    customer = db.relationship('Customer', backref=db.backref('custom_customer_price', lazy=True, passive_deletes=True))
+    item = db.relationship('Item', backref=db.backref('custom_customer_price', lazy=True, passive_deletes=True))
 
     def __repr__(self):
         return f'<Custom_Customer_Price {self.id}>'
@@ -137,7 +137,7 @@ class CustomCustomerPrice(db.Model):
     
 class Unpaid(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    customer_id = db.Column(db.Integer, db.ForeignKey('customer.id'), nullable=False)
+    customer_id = db.Column(db.Integer, db.ForeignKey('customer.id', ondelete="CASCADE"), nullable=False)
     add = db.Column(db.Float, nullable=True, default=0.0) 
     sub = db.Column(db.Float, nullable=True, default=0.0) 
     date = db.Column(db.DateTime, default=lambda: datetime.now())
@@ -158,7 +158,7 @@ class Unpaid(db.Model):
     
 class Purchase(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    item_id = db.Column(db.Integer, db.ForeignKey('item.id'), nullable=False)
+    item_id = db.Column(db.Integer, db.ForeignKey('item.id', ondelete="CASCADE"), nullable=False)
     quantity = db.Column(db.Float, nullable=False)  # Inward quantity
     buy_price = db.Column(db.Float, nullable=False)  # Buy price at that time
     sell_price = db.Column(db.Float, nullable=True)  # Sell price at that time (optional)

@@ -82,6 +82,28 @@ const app = new Vue({
           .catch(err => {
               alert('Could not create new bill: ' + err.message);
           });
+      },
+      addWholesaleBillTab() {
+        // New: creates a wholesale bill (customer_id: 15)
+        fetch('/api/bills', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ customer_id: 15 })
+        })
+        .then(res => {
+          if (!res.ok) throw new Error('Failed to create wholesale bill');
+          return res.json();
+        })
+        .then(bill => {
+          const billId = bill.id;
+          const newPath = `/bill/${billId}`;
+          this.openTabs.push({ path: newPath, name: `Wholesale Bill #${billId}` });
+          this.activeTab = newPath;
+          this.$router.push(newPath);
+        })
+        .catch(err => {
+          alert('Could not create new wholesale bill: ' + err.message);
+        });
       }
     },
     template: `
@@ -114,7 +136,11 @@ const app = new Vue({
               <i class="bi bi-caret-down"></i>
             </div>
         </nav>
-        <search-bar @add-bill-tab="addBillTab" @search="handleSearch"></search-bar>
+        <search-bar
+          @add-bill-tab="addBillTab"
+          @add-wholesale-bill-tab="addWholesaleBillTab"
+          @search="handleSearch">
+        </search-bar>
         <div class="flex-grow-1 d-flex flex-column">
       <router-view class="flex-grow-1 w-100" :search-term="searchTerm"></router-view>
     </div>
