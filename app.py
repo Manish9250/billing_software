@@ -9,6 +9,7 @@ from application.resources.billxitems import billxitems_bp
 from application.resources.custom_customer_price import custom_customer_price_bp
 from application.resources.unpaid_money import unpaid_money_bp
 from application.resources.purchase import purchase_bp
+from application.resources.statistics import statistics_bp
 
 
 def create_app():
@@ -27,6 +28,7 @@ app.register_blueprint(billxitems_bp, url_prefix='/api')
 app.register_blueprint(custom_customer_price_bp, url_prefix='/api')
 app.register_blueprint(unpaid_money_bp, url_prefix='/api')
 app.register_blueprint(purchase_bp, url_prefix='/api')
+app.register_blueprint(statistics_bp)
 
 from application.routes import *
 

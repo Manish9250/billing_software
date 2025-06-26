@@ -138,6 +138,18 @@ export default {
               body: JSON.stringify(payload)
             });
             const data = await res.json();
+
+            // Handle duplicate error from backend
+            if (res.status === 409 && data.message && data.message.includes('Duplicate')) {
+              this.$root.notify(
+                `Duplicate item "${item.itemName} (${item.size})" removed from bill.`,
+                'warning'
+              );
+              //this.items.splice(idx, 1);
+              //idx--; // Adjust index after removal
+              continue; // Skip to next item
+            }
+
             if (!res.ok) {
               this.errorMessage = data.message || 'Failed to save item';
               this.$root.notify(this.errorMessage, 'error');

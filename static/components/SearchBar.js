@@ -34,11 +34,10 @@ export default {
                     </router-link>
                 </button>
                 <button class="btn btn-outline-primary mx-1 d-flex align-items-center">
-                    <span class="me-1">
-                        <!-- Stats SVG -->
-                        <i class="bi bi-graph-up"></i>
-                    </span>
-                    Statistics
+                    <router-link to="/statistics" class="text-decoration-none text-reset">
+                        <span class="me-1"><i class="bi bi-graph-up"></i></span>
+                        Statistics
+                    </router-link>
                 </button>
             </div>
             <!-- Center Search Bar -->
