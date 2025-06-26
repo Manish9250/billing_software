@@ -37,6 +37,23 @@ export default {
       const filteredItem = this.filteredItems[filteredRowIdx];
       return this.items.findIndex(i => i.itemCode === filteredItem.itemCode);
     },
+    async deleteItem(rowIdx) {
+      const origIdx = this.getOriginalIndex(rowIdx);
+      const item = this.items[origIdx];
+      if (!item.itemCode) return;
+      try {
+        const res = await fetch(`/api/items/${item.itemCode}`, { method: 'DELETE' });
+        if (res.ok) {
+          this.items.splice(origIdx, 1);
+          this.$root && this.$root.notify && this.$root.notify('Item deleted!', 'success');
+        } else {
+          const data = await res.json();
+          this.$root && this.$root.notify && this.$root.notify(data.message || 'Delete failed', 'error');
+        }
+      } catch (err) {
+        this.$root && this.$root.notify && this.$root.notify('Delete failed: ' + err.message, 'error');
+      }
+    },
 
     startEdit(rowIdx, colIdx) {
       if (this.columns[colIdx].editable) {
@@ -316,6 +333,41 @@ export default {
                     })
                   ]);
                 }
+                // Item code column: show delete icon on hover
+                if (col.key === 'itemCode') {
+                  return h('td', {
+                    style: { position: 'relative', cursor: 'pointer', height: "40px" },
+                    on: {
+                      mouseenter: () => { this.$set(item, '_showDelete', true); },
+                      mouseleave: () => { this.$set(item, '_showDelete', false); }
+                    }
+                  }, [
+                    item[col.key],
+                    item._showDelete && item.itemCode
+                      ? h('span', {
+                          style: {
+                            position: 'absolute',
+                            right: '8px',
+                            top: '50%',
+                            transform: 'translateY(-50%)',
+                            color: '#dc3545',
+                            cursor: 'pointer',
+                            fontSize: '1.2em',
+                            zIndex: 10
+                          },
+                          attrs: { title: 'Delete item' },
+                          on: {
+                            click: e => {
+                              e.stopPropagation();
+                              this.deleteItem(rowIdx);
+                            }
+                          }
+                        }, [h('i', { class: 'bi bi-trash' })])
+                      : null
+                  ]);
+                }
+
+                // All other columns
                 return h('td', {
                   on: {
                     click: () => this.startEdit(rowIdx, colIdx)
