@@ -109,6 +109,17 @@ class ItemResource(Resource):
         except Exception as e:
             db.session.rollback()
             return {"message": str(e)}, 500 #Internal error
+
+class ItemExactNameResource(Resource):
+    def get(self):
+        name = request.args.get('name')
+        if not name:
+            return {'message': 'Name is required'}, 400
+        items = Item.query.filter(Item.name == name).all()
+        return [item.to_dict() for item in items], 200
+
+# Register the new resource
+api.add_resource(ItemExactNameResource, '/items/exact')
         
 api.add_resource(
     ItemResource,

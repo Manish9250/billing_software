@@ -502,26 +502,28 @@ export default {
       this.fetchSizeSuggestions(idx, suggestion, '');
     },
     fetchSizeSuggestions(idx, itemName, query) {
-      if (!itemName) {
+    if (!itemName) {
+      this.$set(this.items[idx], 'sizeSuggestions', []);
+      this.$set(this.items[idx], 'matchedItems', []);
+      return;
+    }
+    let url = `/api/items/exact?name=${encodeURIComponent(itemName)}`;
+    fetch(url)
+      .then(res => res.json())
+      .then(data => {
+        // Unique sizes only for the exact name
+        let sizes = [...new Set(data.map(item => item.size))];
+        if (query) {
+          sizes = sizes.filter(size => size.toLowerCase().includes(query.toLowerCase()));
+        }
+        this.$set(this.items[idx], 'sizeSuggestions', sizes);
+        this.$set(this.items[idx], 'matchedItems', data);
+      })
+      .catch(() => {
         this.$set(this.items[idx], 'sizeSuggestions', []);
         this.$set(this.items[idx], 'matchedItems', []);
-        return;
-      }
-      let url = `/api/items?name=${encodeURIComponent(itemName)}`;
-      if (query) url += `&size=${encodeURIComponent(query)}`;
-      fetch(url)
-        .then(res => res.json())
-        .then(data => {
-          // Unique sizes only
-          const sizes = [...new Set(data.map(item => item.size))];
-          this.$set(this.items[idx], 'sizeSuggestions', sizes);
-          this.$set(this.items[idx], 'matchedItems', data); // Store all matching items
-        })
-        .catch(() => {
-          this.$set(this.items[idx], 'sizeSuggestions', []);
-          this.$set(this.items[idx], 'matchedItems', []);
-        });
-    },
+      });
+  },
     selectSizeSuggestion(idx, suggestion) {
       this.items[idx].size = suggestion;
       this.$set(this.items[idx], 'sizeSuggestions', []);
