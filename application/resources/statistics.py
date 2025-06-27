@@ -19,7 +19,7 @@ class HourlySales(Resource):
 
         # Set shop open/close hours (customize as needed)
         open_hour = 8
-        close_hour = 20
+        close_hour = 23
 
         # Query all bills for the day
         bills = Bill.query.filter(
