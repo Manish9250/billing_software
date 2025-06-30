@@ -3,10 +3,12 @@ export default {
     return {
       chart: null,
       salesData: [],
+      profitData: [],
       labels: [],
       openHour: 8,
       closeHour: 20,
       period: 'today', // 'today', 'daily', 'monthly'
+      billType: 'both', // 'both', 'retail', 'wholesale'
     };
   },
   mounted() {
@@ -17,16 +19,16 @@ export default {
     clearInterval(this.timer);
   },
   watch: {
-    period() {
-      this.fetchSales();
-    }
+    period() { this.fetchSales(); },
+    billType() { this.fetchSales(); }
   },
   methods: {
     async fetchSales() {
       let url;
+      let params = `type=${this.billType}`;
       if (this.period === 'today') {
         const today = new Date().toISOString().slice(0, 10);
-        url = `/api/sales/hourly?date=${today}`;
+        url = `/api/sales/hourly?date=${today}&${params}`;
         const res = await fetch(url);
         const data = await res.json();
         this.openHour = data.open_hour;
@@ -36,35 +38,36 @@ export default {
         const endHour = Math.min(currentHour, this.closeHour);
         this.labels = [];
         this.salesData = [];
+        this.profitData = [];
         for (let h = this.openHour; h <= endHour; h++) {
           this.labels.push(`${h}:00`);
           this.salesData.push(data.sales[h] || 0);
+          this.profitData.push(data.profit[h] || 0);
         }
       } else if (this.period === 'daily') {
-        url = `/api/sales/daily?days=7`;
+        url = `/api/sales/daily?days=7&${params}`;
         const res = await fetch(url);
         const data = await res.json();
         this.labels = data.labels;
         this.salesData = data.sales;
+        this.profitData = data.profit;
       } else if (this.period === 'monthly') {
-        url = `/api/sales/monthly?months=12`;
+        url = `/api/sales/monthly?months=12&${params}`;
         const res = await fetch(url);
         const data = await res.json();
         this.labels = data.labels;
         this.salesData = data.sales;
+        this.profitData = data.profit;
       }
       this.renderChart();
     },
     renderChart() {
+      // Cost = sales - profit
+      const costData = this.salesData.map((sale, i) => Math.max(0, sale - (this.profitData[i] || 0)));
       if (this.chart) {
         this.chart.data.labels = this.labels;
-        this.chart.data.datasets[0].data = this.salesData;
-        this.chart.data.datasets[0].label =
-          this.period === 'today'
-            ? 'Sales per Hour'
-            : this.period === 'daily'
-            ? 'Sales per Day'
-            : 'Sales per Month';
+        this.chart.data.datasets[0].data = costData;
+        this.chart.data.datasets[1].data = this.profitData;
         this.chart.update();
         return;
       }
@@ -73,22 +76,41 @@ export default {
         type: 'bar',
         data: {
           labels: this.labels,
-          datasets: [{
-            label:
-              this.period === 'today'
-                ? 'Sales per Hour'
-                : this.period === 'daily'
-                ? 'Sales per Day'
-                : 'Sales per Month',
-            data: this.salesData,
-            backgroundColor: '#0d6efd'
-          }]
+          datasets: [
+            {
+              label: 'Cost (Sale - Profit)',
+              data: costData,
+              backgroundColor: '#0d6efd'
+            },
+            {
+              label: 'Profit',
+              data: this.profitData,
+              backgroundColor: '#198754'
+            }
+          ]
         },
         options: {
           responsive: true,
+          plugins: {
+            tooltip: { mode: 'index', intersect: false }
+          },
           scales: {
-            x: { title: { display: true, text: this.period === 'today' ? 'Time' : this.period === 'daily' ? 'Date' : 'Month' } },
-            y: { title: { display: true, text: 'Sales (₹)' }, beginAtZero: true }
+            x: {
+              stacked: true,
+              title: {
+                display: true,
+                text: this.period === 'today'
+                  ? 'Time'
+                  : this.period === 'daily'
+                  ? 'Date'
+                  : 'Month'
+              }
+            },
+            y: {
+              stacked: true,
+              title: { display: true, text: 'Sales (₹)' },
+              beginAtZero: true
+            }
           }
         }
       });
@@ -98,10 +120,15 @@ export default {
     <div class="my-4">
       <div class="d-flex align-items-center mb-2">
         <h4 class="me-3 mb-0">Sales Chart</h4>
-        <select v-model="period" class="form-select w-auto">
+        <select v-model="period" class="form-select w-auto me-2">
           <option value="today">Today (Hourly)</option>
           <option value="daily">Last 7 Days</option>
           <option value="monthly">Last 12 Months</option>
+        </select>
+        <select v-model="billType" class="form-select w-auto">
+          <option value="both">All Bills</option>
+          <option value="retail">Retail Only</option>
+          <option value="wholesale">Wholesale Only</option>
         </select>
       </div>
       <canvas ref="canvas" height="100"></canvas>
